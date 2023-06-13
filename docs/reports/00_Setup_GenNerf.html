@@ -1,0 +1,2206 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.361">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="And integrating this with DarwinAI SDK’s darwinai.torch.builder.build_model()">
+
+<title>GEN-NeRF - Exploring the Vanilla NeRF Field + MLP</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-sidebar docked nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">GEN-NeRF</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html" rel="" target="">
+ <span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link active" href="../reports/index.html" rel="" target="" aria-current="page">
+ <span class="menu-text">Reports</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../experiments/index.html" rel="" target="">
+ <span class="menu-text">Experiments</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../documentation/index.html" rel="" target="">
+ <span class="menu-text">Documentation</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html" rel="" target="">
+ <span class="menu-text">About</span></a>
+  </li>  
+</ul>
+            <div class="quarto-navbar-tools">
+</div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../reports/index.html">Reports</a></li><li class="breadcrumb-item"><a href="../reports/00_Setup_GenNerf.html">Exploring the Vanilla NeRF Field + MLP</a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+      <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../reports/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Reports</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reports/00_Setup_GenNerf.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Exploring the Vanilla NeRF Field + MLP</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview"><span class="header-section-number">1</span> Overview</a></li>
+  <li><a href="#sec-nerf-pytorch" id="toc-sec-nerf-pytorch" class="nav-link" data-scroll-target="#sec-nerf-pytorch"><span class="header-section-number">2</span> Vanilla NeRF Model from <code>nerf-pytorch</code> repo</a>
+  <ul class="collapse">
+  <li><a href="#coarse-model-architecture" id="toc-coarse-model-architecture" class="nav-link" data-scroll-target="#coarse-model-architecture"><span class="header-section-number">2.1</span> Coarse Model Architecture</a></li>
+  <li><a href="#coarse-field-base-mlp-architecture" id="toc-coarse-field-base-mlp-architecture" class="nav-link" data-scroll-target="#coarse-field-base-mlp-architecture"><span class="header-section-number">2.2</span> Coarse Field Base MLP Architecture</a></li>
+  </ul></li>
+  <li><a href="#sec-nerf-studio-vanilla" id="toc-sec-nerf-studio-vanilla" class="nav-link" data-scroll-target="#sec-nerf-studio-vanilla"><span class="header-section-number">3</span> Vanilla NeRF Model from NerfStudio</a>
+  <ul class="collapse">
+  <li><a href="#coarse-field-base-mlp-architecture-1" id="toc-coarse-field-base-mlp-architecture-1" class="nav-link" data-scroll-target="#coarse-field-base-mlp-architecture-1"><span class="header-section-number">3.1</span> Coarse Field Base MLP Architecture</a>
+  <ul class="collapse">
+  <li><a href="#discrepancy-in-the-base-mlp-architecture-between-nerf-pytorch-and-nerfstudio" id="toc-discrepancy-in-the-base-mlp-architecture-between-nerf-pytorch-and-nerfstudio" class="nav-link" data-scroll-target="#discrepancy-in-the-base-mlp-architecture-between-nerf-pytorch-and-nerfstudio"><span class="header-section-number">3.1.1</span> Discrepancy in the Base MLP Architecture between <code>nerf-pytorch</code> and <code>NerfStudio</code></a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#sec-w23-nerf" id="toc-sec-w23-nerf" class="nav-link" data-scroll-target="#sec-w23-nerf"><span class="header-section-number">4</span> Winter 2023 implementation of BlockSpec integrated vanilla NeRF model (<code>W23NeRF</code>)</a>
+  <ul class="collapse">
+  <li><a href="#creating-a-w23nerf-model" id="toc-creating-a-w23nerf-model" class="nav-link" data-scroll-target="#creating-a-w23nerf-model"><span class="header-section-number">4.1</span> Creating a <code>W23NeRF</code> model</a></li>
+  <li><a href="#reproducing-vanilla-nerf-architecture" id="toc-reproducing-vanilla-nerf-architecture" class="nav-link" data-scroll-target="#reproducing-vanilla-nerf-architecture"><span class="header-section-number">4.2</span> Reproducing Vanilla NeRF architecture</a>
+  <ul class="collapse">
+  <li><a href="#expected-initial-blockspecs" id="toc-expected-initial-blockspecs" class="nav-link" data-scroll-target="#expected-initial-blockspecs"><span class="header-section-number">4.2.1</span> Expected initial blockspecs</a></li>
+  <li><a href="#initial-blockspecs-with-large-initial-depths" id="toc-initial-blockspecs-with-large-initial-depths" class="nav-link" data-scroll-target="#initial-blockspecs-with-large-initial-depths"><span class="header-section-number">4.2.2</span> Initial BlockSpecs with large initial depths</a></li>
+  <li><a href="#initial-blockspecs-with-small-initial-depth-for-block-3" id="toc-initial-blockspecs-with-small-initial-depth-for-block-3" class="nav-link" data-scroll-target="#initial-blockspecs-with-small-initial-depth-for-block-3"><span class="header-section-number">4.2.3</span> Initial blockspecs with small initial depth for block 3</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#sec-gen-nerf" id="toc-sec-gen-nerf" class="nav-link" data-scroll-target="#sec-gen-nerf"><span class="header-section-number">5</span> Gen-NeRF Vanilla Model (<code>GenNerf</code>)</a>
+  <ul class="collapse">
+  <li><a href="#coarse-field-base-mlp-architecture-2" id="toc-coarse-field-base-mlp-architecture-2" class="nav-link" data-scroll-target="#coarse-field-base-mlp-architecture-2"><span class="header-section-number">5.1</span> Coarse Field Base MLP Architecture</a></li>
+  <li><a href="#reproducing-vanilla-nerf-architecture-1" id="toc-reproducing-vanilla-nerf-architecture-1" class="nav-link" data-scroll-target="#reproducing-vanilla-nerf-architecture-1"><span class="header-section-number">5.2</span> Reproducing Vanilla NeRF architecture</a></li>
+  <li><a href="#initial-blockspecs-to-generate-vanilla-nerf-architecture" id="toc-initial-blockspecs-to-generate-vanilla-nerf-architecture" class="nav-link" data-scroll-target="#initial-blockspecs-to-generate-vanilla-nerf-architecture"><span class="header-section-number">5.3</span> Initial BlockSpecs to generate Vanilla NeRF architecture</a></li>
+  <li><a href="#modifying-target-ratio-for-initial-blockspecs" id="toc-modifying-target-ratio-for-initial-blockspecs" class="nav-link" data-scroll-target="#modifying-target-ratio-for-initial-blockspecs"><span class="header-section-number">5.4</span> Modifying Target Ratio for Initial Blockspecs</a>
+  <ul class="collapse">
+  <li><a href="#validating-that-target-ratio-of-1.0-results-in-identical-architecture-to-vanillanerf-base-mlp" id="toc-validating-that-target-ratio-of-1.0-results-in-identical-architecture-to-vanillanerf-base-mlp" class="nav-link" data-scroll-target="#validating-that-target-ratio-of-1.0-results-in-identical-architecture-to-vanillanerf-base-mlp"><span class="header-section-number">5.4.1</span> Validating that target ratio of 1.0 results in identical architecture to <code>VanillaNeRF</code> Base MLP</a></li>
+  </ul></li>
+  <li><a href="#generate-the-blockspecs-produced-by-darwinai-sdk-for-the-w23nerf-model" id="toc-generate-the-blockspecs-produced-by-darwinai-sdk-for-the-w23nerf-model" class="nav-link" data-scroll-target="#generate-the-blockspecs-produced-by-darwinai-sdk-for-the-w23nerf-model"><span class="header-section-number">5.5</span> Generate the BlockSpecs produced by DarwinAI SDK for the W23NeRF model</a>
+  <ul class="collapse">
+  <li><a href="#blockspecs-generated-by-buildsdk-for-the-eddy-vanilla-nerf-with-default256" id="toc-blockspecs-generated-by-buildsdk-for-the-eddy-vanilla-nerf-with-default256" class="nav-link" data-scroll-target="#blockspecs-generated-by-buildsdk-for-the-eddy-vanilla-nerf-with-default256"><span class="header-section-number">5.5.1</span> BlockSpecs generated by BuildSDK for the Eddy Vanilla NeRF with default=256</a></li>
+  <li><a href="#blockspecs-generated-by-buildsdk-for-the-eddy-vanilla-nerf-with-default64" id="toc-blockspecs-generated-by-buildsdk-for-the-eddy-vanilla-nerf-with-default64" class="nav-link" data-scroll-target="#blockspecs-generated-by-buildsdk-for-the-eddy-vanilla-nerf-with-default64"><span class="header-section-number">5.5.2</span> BlockSpecs generated by BuildSDK for the Eddy Vanilla NeRF with default=64</a></li>
+  <li><a href="#blockspecs-generated-by-buildsdk-for-the-vanilla-gennerf-with-default256" id="toc-blockspecs-generated-by-buildsdk-for-the-vanilla-gennerf-with-default256" class="nav-link" data-scroll-target="#blockspecs-generated-by-buildsdk-for-the-vanilla-gennerf-with-default256"><span class="header-section-number">5.5.3</span> BlockSpecs generated by BuildSDK for the Vanilla GenNeRF with default=256</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Exploring the Vanilla NeRF Field + MLP</h1>
+</div>
+
+<div>
+  <div class="description">
+    And integrating this with DarwinAI SDK’s <code>darwinai.torch.builder.build_model()</code>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="overview" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Overview</h1>
+<p>This notebook does the following:</p>
+<ol type="1">
+<li><p>Loads and evaluates the vanilla NeRF model which Eddy modified (W’23) to integrate with the DarwinAI SDK</p></li>
+<li><p>Loads and evaluates the new GenNerf model which we’ve built leveraging NerfStudio’s vanilla Nerf model</p></li>
+<li><p>Shows how GenNerf can be integrated with the DarwinAI SDK</p></li>
+</ol>
+</section>
+<section id="sec-nerf-pytorch" class="level1 page-columns page-full" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Vanilla NeRF Model from <a href="https://github.com/yenchenlin/nerf-pytorch"><code>nerf-pytorch</code></a> repo</h1>
+<p><code>nerf-pytorch</code> is the defacto reproduction of the original NeRF paper, in PyTorch.</p>
+<div id="lst-pytorch-nerf-implementation" class="cell" data-execution_count="6">
+<details>
+<summary>Core implementation of NeRF model from <code>pytorch-nerf</code> repo</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">class</span> PyTorchNeRF(nn.Module):</span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(</span>
+<span id="cb1-3"><a href="#cb1-3"></a>        <span class="va">self</span>,</span>
+<span id="cb1-4"><a href="#cb1-4"></a>        D<span class="op">=</span><span class="dv">8</span>,</span>
+<span id="cb1-5"><a href="#cb1-5"></a>        W<span class="op">=</span><span class="dv">256</span>,</span>
+<span id="cb1-6"><a href="#cb1-6"></a>        input_ch<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb1-7"><a href="#cb1-7"></a>        input_ch_views<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb1-8"><a href="#cb1-8"></a>        output_ch<span class="op">=</span><span class="dv">4</span>,</span>
+<span id="cb1-9"><a href="#cb1-9"></a>        skips<span class="op">=</span>[<span class="dv">4</span>],</span>
+<span id="cb1-10"><a href="#cb1-10"></a>        use_viewdirs<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-11"><a href="#cb1-11"></a>    ):</span>
+<span id="cb1-12"><a href="#cb1-12"></a>        <span class="co">""" """</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a>        <span class="bu">super</span>(PyTorchNeRF, <span class="va">self</span>).<span class="fu">__init__</span>()</span>
+<span id="cb1-14"><a href="#cb1-14"></a>        <span class="va">self</span>.D <span class="op">=</span> D</span>
+<span id="cb1-15"><a href="#cb1-15"></a>        <span class="va">self</span>.W <span class="op">=</span> W</span>
+<span id="cb1-16"><a href="#cb1-16"></a>        <span class="va">self</span>.input_ch <span class="op">=</span> input_ch</span>
+<span id="cb1-17"><a href="#cb1-17"></a>        <span class="va">self</span>.input_ch_views <span class="op">=</span> input_ch_views</span>
+<span id="cb1-18"><a href="#cb1-18"></a>        <span class="va">self</span>.skips <span class="op">=</span> skips</span>
+<span id="cb1-19"><a href="#cb1-19"></a>        <span class="va">self</span>.use_viewdirs <span class="op">=</span> use_viewdirs</span>
+<span id="cb1-20"><a href="#cb1-20"></a></span>
+<span id="cb1-21"><a href="#cb1-21"></a>        <span class="va">self</span>.pts_linears <span class="op">=</span> nn.ModuleList(</span>
+<span id="cb1-22"><a href="#cb1-22"></a>            [nn.Linear(input_ch, W)]</span>
+<span id="cb1-23"><a href="#cb1-23"></a>            <span class="op">+</span> [</span>
+<span id="cb1-24"><a href="#cb1-24"></a>                nn.Linear(W, W) <span class="cf">if</span> i <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.skips <span class="cf">else</span> nn.Linear(W <span class="op">+</span> input_ch, W)</span>
+<span id="cb1-25"><a href="#cb1-25"></a>                <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(D <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb1-26"><a href="#cb1-26"></a>            ]</span>
+<span id="cb1-27"><a href="#cb1-27"></a>        )</span>
+<span id="cb1-28"><a href="#cb1-28"></a></span>
+<span id="cb1-29"><a href="#cb1-29"></a>        <span class="co">### Implementation according to the official code release (https://github.com/bmild/nerf/blob/master/run_nerf_helpers.py#L104-L105)</span></span>
+<span id="cb1-30"><a href="#cb1-30"></a>        <span class="va">self</span>.views_linears <span class="op">=</span> nn.ModuleList([nn.Linear(input_ch_views <span class="op">+</span> W, W <span class="op">//</span> <span class="dv">2</span>)])</span>
+<span id="cb1-31"><a href="#cb1-31"></a></span>
+<span id="cb1-32"><a href="#cb1-32"></a>        <span class="co">### Implementation according to the paper</span></span>
+<span id="cb1-33"><a href="#cb1-33"></a>        <span class="co"># self.views_linears = nn.ModuleList(</span></span>
+<span id="cb1-34"><a href="#cb1-34"></a>        <span class="co">#     [nn.Linear(input_ch_views + W, W//2)] + [nn.Linear(W//2, W//2) for i in range(D//2)])</span></span>
+<span id="cb1-35"><a href="#cb1-35"></a></span>
+<span id="cb1-36"><a href="#cb1-36"></a>        <span class="cf">if</span> use_viewdirs:</span>
+<span id="cb1-37"><a href="#cb1-37"></a>            <span class="va">self</span>.feature_linear <span class="op">=</span> nn.Linear(W, W)</span>
+<span id="cb1-38"><a href="#cb1-38"></a>            <span class="va">self</span>.alpha_linear <span class="op">=</span> nn.Linear(W, <span class="dv">1</span>)</span>
+<span id="cb1-39"><a href="#cb1-39"></a>            <span class="va">self</span>.rgb_linear <span class="op">=</span> nn.Linear(W <span class="op">//</span> <span class="dv">2</span>, <span class="dv">3</span>)</span>
+<span id="cb1-40"><a href="#cb1-40"></a>        <span class="cf">else</span>:</span>
+<span id="cb1-41"><a href="#cb1-41"></a>            <span class="va">self</span>.output_linear <span class="op">=</span> nn.Linear(W, output_ch)</span>
+<span id="cb1-42"><a href="#cb1-42"></a></span>
+<span id="cb1-43"><a href="#cb1-43"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, x):</span>
+<span id="cb1-44"><a href="#cb1-44"></a>        input_pts, input_views <span class="op">=</span> torch.split(</span>
+<span id="cb1-45"><a href="#cb1-45"></a>            x, [<span class="va">self</span>.input_ch, <span class="va">self</span>.input_ch_views], dim<span class="op">=-</span><span class="dv">1</span></span>
+<span id="cb1-46"><a href="#cb1-46"></a>        )</span>
+<span id="cb1-47"><a href="#cb1-47"></a>        h <span class="op">=</span> input_pts</span>
+<span id="cb1-48"><a href="#cb1-48"></a>        <span class="cf">for</span> i, l <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="va">self</span>.pts_linears):</span>
+<span id="cb1-49"><a href="#cb1-49"></a>            h <span class="op">=</span> <span class="va">self</span>.pts_linears[i](h)</span>
+<span id="cb1-50"><a href="#cb1-50"></a>            h <span class="op">=</span> F.relu(h)</span>
+<span id="cb1-51"><a href="#cb1-51"></a>            <span class="cf">if</span> i <span class="kw">in</span> <span class="va">self</span>.skips:</span>
+<span id="cb1-52"><a href="#cb1-52"></a>                h <span class="op">=</span> torch.cat([input_pts, h], <span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb1-53"><a href="#cb1-53"></a></span>
+<span id="cb1-54"><a href="#cb1-54"></a>        <span class="cf">if</span> <span class="va">self</span>.use_viewdirs:</span>
+<span id="cb1-55"><a href="#cb1-55"></a>            alpha <span class="op">=</span> <span class="va">self</span>.alpha_linear(h)</span>
+<span id="cb1-56"><a href="#cb1-56"></a>            feature <span class="op">=</span> <span class="va">self</span>.feature_linear(h)</span>
+<span id="cb1-57"><a href="#cb1-57"></a>            h <span class="op">=</span> torch.cat([feature, input_views], <span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb1-58"><a href="#cb1-58"></a></span>
+<span id="cb1-59"><a href="#cb1-59"></a>            <span class="cf">for</span> i, l <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="va">self</span>.views_linears):</span>
+<span id="cb1-60"><a href="#cb1-60"></a>                h <span class="op">=</span> <span class="va">self</span>.views_linears[i](h)</span>
+<span id="cb1-61"><a href="#cb1-61"></a>                h <span class="op">=</span> F.relu(h)</span>
+<span id="cb1-62"><a href="#cb1-62"></a></span>
+<span id="cb1-63"><a href="#cb1-63"></a>            rgb <span class="op">=</span> <span class="va">self</span>.rgb_linear(h)</span>
+<span id="cb1-64"><a href="#cb1-64"></a>            outputs <span class="op">=</span> torch.cat([rgb, alpha], <span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb1-65"><a href="#cb1-65"></a>        <span class="cf">else</span>:</span>
+<span id="cb1-66"><a href="#cb1-66"></a>            outputs <span class="op">=</span> <span class="va">self</span>.output_linear(h)</span>
+<span id="cb1-67"><a href="#cb1-67"></a></span>
+<span id="cb1-68"><a href="#cb1-68"></a>        <span class="cf">return</span> outputs</span>
+<span id="cb1-69"><a href="#cb1-69"></a></span>
+<span id="cb1-70"><a href="#cb1-70"></a></span>
+<span id="cb1-71"><a href="#cb1-71"></a><span class="kw">def</span> create_nerf():</span>
+<span id="cb1-72"><a href="#cb1-72"></a>    INPUT_CH <span class="op">=</span> <span class="dv">63</span></span>
+<span id="cb1-73"><a href="#cb1-73"></a>    OUTPUT_CH <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb1-74"><a href="#cb1-74"></a>    SKIPS <span class="op">=</span> [<span class="dv">4</span>]</span>
+<span id="cb1-75"><a href="#cb1-75"></a>    INPUT_CH_VIEWS <span class="op">=</span> <span class="dv">27</span></span>
+<span id="cb1-76"><a href="#cb1-76"></a>    USE_VIEWDIRS <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb1-77"><a href="#cb1-77"></a>    NETDEPTH <span class="op">=</span> <span class="dv">8</span></span>
+<span id="cb1-78"><a href="#cb1-78"></a>    NETWIDTH <span class="op">=</span> <span class="dv">256</span></span>
+<span id="cb1-79"><a href="#cb1-79"></a>    NETDEPTH_FINE <span class="op">=</span> <span class="dv">8</span></span>
+<span id="cb1-80"><a href="#cb1-80"></a>    NETWIDTH_FINE <span class="op">=</span> <span class="dv">256</span></span>
+<span id="cb1-81"><a href="#cb1-81"></a></span>
+<span id="cb1-82"><a href="#cb1-82"></a>    model <span class="op">=</span> PyTorchNeRF(</span>
+<span id="cb1-83"><a href="#cb1-83"></a>        D<span class="op">=</span>NETDEPTH,</span>
+<span id="cb1-84"><a href="#cb1-84"></a>        W<span class="op">=</span>NETWIDTH,</span>
+<span id="cb1-85"><a href="#cb1-85"></a>        input_ch<span class="op">=</span>INPUT_CH,</span>
+<span id="cb1-86"><a href="#cb1-86"></a>        output_ch<span class="op">=</span>OUTPUT_CH,</span>
+<span id="cb1-87"><a href="#cb1-87"></a>        skips<span class="op">=</span>SKIPS,</span>
+<span id="cb1-88"><a href="#cb1-88"></a>        input_ch_views<span class="op">=</span>INPUT_CH_VIEWS,</span>
+<span id="cb1-89"><a href="#cb1-89"></a>        use_viewdirs<span class="op">=</span>USE_VIEWDIRS,</span>
+<span id="cb1-90"><a href="#cb1-90"></a>    )</span>
+<span id="cb1-91"><a href="#cb1-91"></a>    grad_vars <span class="op">=</span> <span class="bu">list</span>(model.parameters())</span>
+<span id="cb1-92"><a href="#cb1-92"></a></span>
+<span id="cb1-93"><a href="#cb1-93"></a>    model_fine <span class="op">=</span> PyTorchNeRF(</span>
+<span id="cb1-94"><a href="#cb1-94"></a>        D<span class="op">=</span>NETDEPTH_FINE,</span>
+<span id="cb1-95"><a href="#cb1-95"></a>        W<span class="op">=</span>NETWIDTH_FINE,</span>
+<span id="cb1-96"><a href="#cb1-96"></a>        input_ch<span class="op">=</span>INPUT_CH,</span>
+<span id="cb1-97"><a href="#cb1-97"></a>        output_ch<span class="op">=</span>OUTPUT_CH,</span>
+<span id="cb1-98"><a href="#cb1-98"></a>        skips<span class="op">=</span>SKIPS,</span>
+<span id="cb1-99"><a href="#cb1-99"></a>        input_ch_views<span class="op">=</span>INPUT_CH_VIEWS,</span>
+<span id="cb1-100"><a href="#cb1-100"></a>        use_viewdirs<span class="op">=</span>USE_VIEWDIRS,</span>
+<span id="cb1-101"><a href="#cb1-101"></a>    )</span>
+<span id="cb1-102"><a href="#cb1-102"></a>    grad_vars <span class="op">+=</span> <span class="bu">list</span>(model_fine.parameters())</span>
+<span id="cb1-103"><a href="#cb1-103"></a></span>
+<span id="cb1-104"><a href="#cb1-104"></a>    <span class="cf">return</span> model, model_fine, grad_vars, INPUT_CH, INPUT_CH_VIEWS</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Let’s explore the architecture of the NeRF Field. Since the default configurations/architecture <strong>is identical</strong> for both the coarse and fine model, we will only explore the coarse field model.</p>
+<section id="coarse-model-architecture" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="coarse-model-architecture"><span class="header-section-number">2.1</span> Coarse Model Architecture</h2>
+<div class="cell" data-execution_count="7">
+<details>
+<summary>Architecture summary for <code>pytorch-nerf</code> coarse model</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a>coarse_model, fine_model, grad_vars, input_ch, input_ch_views <span class="op">=</span> create_nerf()</span>
+<span id="cb2-2"><a href="#cb2-2"></a>summary(coarse_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="pytorch-nerf-coarse-arch-summary" class="cell-output cell-output-display" data-execution_count="7">
+<pre><code>========================================================
+Layer (type (var_name):depth-idx)        Param #
+========================================================
+PyTorchNeRF (PyTorchNeRF)                --
+├─ModuleList (pts_linears): 1-1          --
+│    └─Linear (0): 2-1                   16,384
+│    └─Linear (1): 2-2                   65,792
+│    └─Linear (2): 2-3                   65,792
+│    └─Linear (3): 2-4                   65,792
+│    └─Linear (4): 2-5                   65,792
+│    └─Linear (5): 2-6                   81,920
+│    └─Linear (6): 2-7                   65,792
+│    └─Linear (7): 2-8                   65,792
+├─ModuleList (views_linears): 1-2        --
+│    └─Linear (0): 2-9                   36,352
+├─Linear (feature_linear): 1-3           65,792
+├─Linear (alpha_linear): 1-4             257
+├─Linear (rgb_linear): 1-5               387
+========================================================
+Total params: 595,844
+Trainable params: 595,844
+Non-trainable params: 0
+========================================================</code></pre>
+</div>
+</div>
+</section>
+<section id="coarse-field-base-mlp-architecture" class="level2 page-columns page-full" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="coarse-field-base-mlp-architecture"><span class="header-section-number">2.2</span> Coarse Field Base MLP Architecture</h2>
+<p>Let’s take a closer look at the model, especially the base MLP architecture (<code>pts_linears</code>), as it’s what we’ll be optimizing in GenNerf.</p>
+<div class="cell page-columns page-full" data-execution_count="8">
+<details>
+<summary>Detailed architecture summary for <code>pytorch-nerf</code> coarse field base MLP</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a>summary(coarse_model, input_size<span class="op">=</span>(input_ch <span class="op">+</span> input_ch_views,))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="pytorch-nerf-coarse-base-mlp-summary" class="cell-output cell-output-display column-page-right" data-execution_count="8">
+<pre><code>========================================================================================================================
+Layer (type (var_name):depth-idx)        Input Shape      Output Shape     Param #          Param %          Mult-Adds
+========================================================================================================================
+PyTorchNeRF (PyTorchNeRF)                [90]             [4]              --                    --          --
+├─ModuleList (pts_linears): 1-1          --               --               --                    --          --
+│    └─Linear (0): 2-1                   [63]             [256]            16,384             2.75%          4,194,304
+│    └─Linear (1): 2-2                   [256]            [256]            65,792            11.04%          16,842,752
+│    └─Linear (2): 2-3                   [256]            [256]            65,792            11.04%          16,842,752
+│    └─Linear (3): 2-4                   [256]            [256]            65,792            11.04%          16,842,752
+│    └─Linear (4): 2-5                   [256]            [256]            65,792            11.04%          16,842,752
+│    └─Linear (5): 2-6                   [319]            [256]            81,920            13.75%          20,971,520
+│    └─Linear (6): 2-7                   [256]            [256]            65,792            11.04%          16,842,752
+│    └─Linear (7): 2-8                   [256]            [256]            65,792            11.04%          16,842,752
+├─Linear (alpha_linear): 1-2             [256]            [1]              257                0.04%          257
+├─Linear (feature_linear): 1-3           [256]            [256]            65,792            11.04%          16,842,752
+├─ModuleList (views_linears): 1-4        --               --               --                    --          --
+│    └─Linear (0): 2-9                   [283]            [128]            36,352             6.10%          4,653,056
+├─Linear (rgb_linear): 1-5               [128]            [3]              387                0.06%          1,161
+========================================================================================================================
+Total params: 595,844
+Trainable params: 595,844
+Non-trainable params: 0
+Total mult-adds (M): 147.72
+========================================================================================================================
+Input size (MB): 0.00
+Forward/backward pass size (MB): 0.02
+Params size (MB): 2.38
+Estimated Total Size (MB): 2.40
+========================================================================================================================</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-nerf-studio-vanilla" class="level1 page-columns page-full" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Vanilla NeRF Model from NerfStudio</h1>
+<p>Since Gen-Nerf is built on top of NerfStudio’s vanilla NeRF model, let’s take a look at the vanilla NeRF model from NerfStudio. Unlike the previous implementation from <code>nerf-pytorch</code> in <a href="#sec-nerf-pytorch">Section&nbsp;2</a>, note that this model completely encapsulates NeRF, and not just the field.</p>
+<p>Similar to before, note that the coarse and fine models are identical, so we’ll only explore the coarse model.</p>
+<div class="cell" data-execution_count="9">
+<details>
+<summary>Architecture summary for <code>VanillaModel</code> from NerfStudio</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1"></a>vanilla_pipeline_cfg <span class="op">=</span> VanillaPipelineConfig()</span>
+<span id="cb6-2"><a href="#cb6-2"></a>vanilla_nerf_cfg <span class="op">=</span> VanillaModelConfig()</span>
+<span id="cb6-3"><a href="#cb6-3"></a>scene_box <span class="op">=</span> SceneBox(</span>
+<span id="cb6-4"><a href="#cb6-4"></a>    aabb<span class="op">=</span>torch.tensor([[<span class="op">-</span><span class="fl">1.5</span>, <span class="op">-</span><span class="fl">1.5</span>, <span class="op">-</span><span class="fl">1.5</span>], [<span class="fl">1.5</span>, <span class="fl">1.5</span>, <span class="fl">1.5</span>]], dtype<span class="op">=</span>torch.float32)</span>
+<span id="cb6-5"><a href="#cb6-5"></a>)</span>
+<span id="cb6-6"><a href="#cb6-6"></a>vanilla_nerf <span class="op">=</span> vanilla_nerf_cfg.setup(</span>
+<span id="cb6-7"><a href="#cb6-7"></a>    scene_box<span class="op">=</span>scene_box,</span>
+<span id="cb6-8"><a href="#cb6-8"></a>    num_train_data<span class="op">=</span><span class="dv">100</span>,</span>
+<span id="cb6-9"><a href="#cb6-9"></a>)</span>
+<span id="cb6-10"><a href="#cb6-10"></a>summary(vanilla_nerf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="nerfstudio-arch-summary" class="cell-output cell-output-display" data-execution_count="9">
+<pre><code>============================================================================
+Layer (type (var_name):depth-idx)                            Param #
+============================================================================
+NeRFModel (NeRFModel)                                        --
+├─NearFarCollider (collider): 1-1                            --
+├─NeRFField (field_coarse): 1-2                              --
+│    └─NeRFEncoding (position_encoding): 2-1                 --
+│    └─NeRFEncoding (direction_encoding): 2-2                --
+│    └─MLP (mlp_base): 2-3                                   --
+│    │    └─ReLU (activation): 3-1                           --
+│    │    └─ReLU (out_activation): 3-2                       --
+│    │    └─ModuleList (layers): 3-3                         --
+│    │    │    └─Linear (0): 4-1                             16,384
+│    │    │    └─Linear (1): 4-2                             65,792
+│    │    │    └─Linear (2): 4-3                             65,792
+│    │    │    └─Linear (3): 4-4                             65,792
+│    │    │    └─Linear (4): 4-5                             81,920
+│    │    │    └─Linear (5): 4-6                             65,792
+│    │    │    └─Linear (6): 4-7                             65,792
+│    │    │    └─Linear (7): 4-8                             65,792
+│    └─MLP (mlp_head): 2-4                                   --
+│    │    └─ReLU (activation): 3-4                           --
+│    │    └─ReLU (out_activation): 3-5                       --
+│    │    └─ModuleList (layers): 3-6                         --
+│    │    │    └─Linear (0): 4-9                             36,352
+│    │    │    └─Linear (1): 4-10                            16,512
+│    └─DensityFieldHead (field_output_density): 2-5          --
+│    │    └─Softplus (activation): 3-7                       --
+│    │    └─Linear (net): 3-8                                257
+│    └─ModuleList (field_heads): 2-6                         --
+│    │    └─RGBFieldHead (0): 3-9                            --
+│    │    │    └─Sigmoid (activation): 4-11                  --
+│    │    │    └─Linear (net): 4-12                          387
+├─NeRFField (field_fine): 1-3                                --
+│    └─NeRFEncoding (position_encoding): 2-7                 --
+│    └─NeRFEncoding (direction_encoding): 2-8                --
+│    └─MLP (mlp_base): 2-9                                   --
+│    │    └─ReLU (activation): 3-10                          --
+│    │    └─ReLU (out_activation): 3-11                      --
+│    │    └─ModuleList (layers): 3-12                        --
+│    │    │    └─Linear (0): 4-13                            16,384
+│    │    │    └─Linear (1): 4-14                            65,792
+│    │    │    └─Linear (2): 4-15                            65,792
+│    │    │    └─Linear (3): 4-16                            65,792
+│    │    │    └─Linear (4): 4-17                            81,920
+│    │    │    └─Linear (5): 4-18                            65,792
+│    │    │    └─Linear (6): 4-19                            65,792
+│    │    │    └─Linear (7): 4-20                            65,792
+│    └─MLP (mlp_head): 2-10                                  --
+│    │    └─ReLU (activation): 3-13                          --
+│    │    └─ReLU (out_activation): 3-14                      --
+│    │    └─ModuleList (layers): 3-15                        --
+│    │    │    └─Linear (0): 4-21                            36,352
+│    │    │    └─Linear (1): 4-22                            16,512
+│    └─DensityFieldHead (field_output_density): 2-11         --
+│    │    └─Softplus (activation): 3-16                      --
+│    │    └─Linear (net): 3-17                               257
+│    └─ModuleList (field_heads): 2-12                        387
+│    │    └─RGBFieldHead (0): 3-18                           (recursive)
+│    │    │    └─Sigmoid (activation): 4-23                  --
+│    │    │    └─Linear (net): 4-24                          (recursive)
+├─UniformSampler (sampler_uniform): 1-4                      --
+├─PDFSampler (sampler_pdf): 1-5                              --
+├─RGBRenderer (renderer_rgb): 1-6                            --
+├─AccumulationRenderer (renderer_accumulation): 1-7          --
+├─DepthRenderer (renderer_depth): 1-8                        --
+├─MSELoss (rgb_loss): 1-9                                    --
+├─PeakSignalNoiseRatio (psnr): 1-10                          --
+├─LearnedPerceptualImagePatchSimilarity (lpips): 1-11        --
+│    └─NoTrainLpips (net): 2-13                              --
+│    │    └─ScalingLayer (scaling_layer): 3-19               --
+│    │    └─alexnet (net): 3-20                              --
+│    │    │    └─Sequential (slice1): 4-25                   (23,296)
+│    │    │    └─Sequential (slice2): 4-26                   (307,392)
+│    │    │    └─Sequential (slice3): 4-27                   (663,936)
+│    │    │    └─Sequential (slice4): 4-28                   (884,992)
+│    │    │    └─Sequential (slice5): 4-29                   (590,080)
+│    │    └─NetLinLayer (lin0): 3-21                         --
+│    │    │    └─Sequential (model): 4-30                    64
+│    │    └─NetLinLayer (lin1): 3-22                         --
+│    │    │    └─Sequential (model): 4-31                    192
+│    │    └─NetLinLayer (lin2): 3-23                         --
+│    │    │    └─Sequential (model): 4-32                    384
+│    │    └─NetLinLayer (lin3): 3-24                         --
+│    │    │    └─Sequential (model): 4-33                    256
+│    │    └─NetLinLayer (lin4): 3-25                         --
+│    │    │    └─Sequential (model): 4-34                    256
+│    │    └─ModuleList (lins): 3-26                          1,152
+│    │    │    └─NetLinLayer (0): 4-35                       (recursive)
+│    │    │    └─NetLinLayer (1): 4-36                       (recursive)
+│    │    │    └─NetLinLayer (2): 4-37                       (recursive)
+│    │    │    └─NetLinLayer (3): 4-38                       (recursive)
+│    │    │    └─NetLinLayer (4): 4-39                       (recursive)
+============================================================================
+Total params: 3,565,128
+Trainable params: 1,095,432
+Non-trainable params: 2,469,696
+============================================================================</code></pre>
+</div>
+</div>
+<section id="coarse-field-base-mlp-architecture-1" class="level2 page-columns page-full" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="coarse-field-base-mlp-architecture-1"><span class="header-section-number">3.1</span> Coarse Field Base MLP Architecture</h2>
+<div class="cell page-columns page-full" data-execution_count="10">
+<details>
+<summary>Detailed architecture summary for <code>VanillaModel</code> coarse field base MLP from NerfStudio</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1"></a>summary(vanilla_nerf.field_coarse.mlp_base, input_size<span class="op">=</span>(<span class="dv">63</span>,))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="nerfstudio-coarse-base-mlp-summary" class="cell-output cell-output-display column-page-right" data-execution_count="10">
+<pre><code>========================================================================================================================
+Layer (type (var_name):depth-idx)        Input Shape      Output Shape     Param #          Param %          Mult-Adds
+========================================================================================================================
+MLP (MLP)                                [63]             [256]            --                    --          --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (0): 2-1                   [63]             [256]            16,384             3.32%          4,194,304
+├─ReLU (activation): 1-2                 [256]            [256]            --                    --          --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (1): 2-2                   [256]            [256]            65,792            13.34%          16,842,752
+├─ReLU (activation): 1-4                 [256]            [256]            --               (recursive)      --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (2): 2-3                   [256]            [256]            65,792            13.34%          16,842,752
+├─ReLU (activation): 1-6                 [256]            [256]            --               (recursive)      --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (3): 2-4                   [256]            [256]            65,792            13.34%          16,842,752
+├─ReLU (activation): 1-8                 [256]            [256]            --               (recursive)      --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (4): 2-5                   [319]            [256]            81,920            16.61%          20,971,520
+├─ReLU (activation): 1-10                [256]            [256]            --               (recursive)      --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (5): 2-6                   [256]            [256]            65,792            13.34%          16,842,752
+├─ReLU (activation): 1-12                [256]            [256]            --               (recursive)      --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (6): 2-7                   [256]            [256]            65,792            13.34%          16,842,752
+├─ReLU (activation): 1-14                [256]            [256]            --               (recursive)      --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (7): 2-8                   [256]            [256]            65,792            13.34%          16,842,752
+├─ReLU (out_activation): 1-16            [256]            [256]            --                    --          --
+========================================================================================================================
+Total params: 493,056
+Trainable params: 493,056
+Non-trainable params: 0
+Total mult-adds (M): 126.22
+========================================================================================================================
+Input size (MB): 0.00
+Forward/backward pass size (MB): 0.02
+Params size (MB): 1.97
+Estimated Total Size (MB): 1.99
+========================================================================================================================</code></pre>
+</div>
+</div>
+<section id="discrepancy-in-the-base-mlp-architecture-between-nerf-pytorch-and-nerfstudio" class="level3" data-number="3.1.1">
+<h3 data-number="3.1.1" class="anchored" data-anchor-id="discrepancy-in-the-base-mlp-architecture-between-nerf-pytorch-and-nerfstudio"><span class="header-section-number">3.1.1</span> Discrepancy in the Base MLP Architecture between <code>nerf-pytorch</code> and <code>NerfStudio</code></h3>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Potential Bug?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Note that there’s a discrepancy in the depth at which the skip connection is applied. In the <code>nerf-pytorch</code> implementation, the skip connection is applied at the 6th layer, whereas in NerfStudio’s implementation, the skip connection is applied at the 5th layer.</p>
+</div>
+</div>
+<div class="cell" data-execution_count="11">
+<details>
+<summary>Test case demonstrating discrepancy between <code>pytorch-nerf</code> and <code>nerfstudio</code> implementations</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1"></a>coarse_model, <span class="op">*</span>rest <span class="op">=</span> create_nerf()</span>
+<span id="cb10-2"><a href="#cb10-2"></a></span>
+<span id="cb10-3"><a href="#cb10-3"></a>vanilla_pipeline_cfg <span class="op">=</span> VanillaPipelineConfig()</span>
+<span id="cb10-4"><a href="#cb10-4"></a>vanilla_nerf_cfg <span class="op">=</span> VanillaModelConfig()</span>
+<span id="cb10-5"><a href="#cb10-5"></a>dummy_datamanager <span class="op">=</span> vanilla_pipeline_cfg.datamanager</span>
+<span id="cb10-6"><a href="#cb10-6"></a>scene_box <span class="op">=</span> SceneBox(</span>
+<span id="cb10-7"><a href="#cb10-7"></a>    aabb<span class="op">=</span>torch.tensor([[<span class="op">-</span><span class="fl">1.5</span>, <span class="op">-</span><span class="fl">1.5</span>, <span class="op">-</span><span class="fl">1.5</span>], [<span class="fl">1.5</span>, <span class="fl">1.5</span>, <span class="fl">1.5</span>]], dtype<span class="op">=</span>torch.float32)</span>
+<span id="cb10-8"><a href="#cb10-8"></a>)</span>
+<span id="cb10-9"><a href="#cb10-9"></a>vanilla_nerf <span class="op">=</span> vanilla_nerf_cfg.setup(</span>
+<span id="cb10-10"><a href="#cb10-10"></a>    scene_box<span class="op">=</span>scene_box,</span>
+<span id="cb10-11"><a href="#cb10-11"></a>    num_train_data<span class="op">=</span><span class="dv">100</span>,</span>
+<span id="cb10-12"><a href="#cb10-12"></a>)</span>
+<span id="cb10-13"><a href="#cb10-13"></a></span>
+<span id="cb10-14"><a href="#cb10-14"></a>test_module_lists_equal(</span>
+<span id="cb10-15"><a href="#cb10-15"></a>    coarse_model.pts_linears, vanilla_nerf.field_coarse.mlp_base.layers</span>
+<span id="cb10-16"><a href="#cb10-16"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div class="sourceCode" id="cb11"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1"></a>Traceback (most recent call last):</span>
+<span id="cb11-2"><a href="#cb11-2"></a>  File <span class="st">"/tmp/ipykernel_807250/1772845051.py"</span>, line <span class="dv">123</span>, <span class="kw">in</span> test_module_lists_equal</span>
+<span id="cb11-3"><a href="#cb11-3"></a>    <span class="cf">assert</span> module1.in_features <span class="op">==</span> module2.in_features, (</span>
+<span id="cb11-4"><a href="#cb11-4"></a><span class="pp">AssertionError</span>: Module <span class="dv">4</span>: Linear in_features differ (<span class="dv">256</span> vs <span class="dv">319</span>)</span>
+<span id="cb11-5"><a href="#cb11-5"></a></span>
+<span id="cb11-6"><a href="#cb11-6"></a>List <span class="dv">1</span>: ModuleList(</span>
+<span id="cb11-7"><a href="#cb11-7"></a>  (<span class="dv">0</span>): Linear(in_features<span class="op">=</span><span class="dv">63</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-8"><a href="#cb11-8"></a>  (<span class="dv">1</span>): Linear(in_features<span class="op">=</span><span class="dv">256</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-9"><a href="#cb11-9"></a>  (<span class="dv">2</span>): Linear(in_features<span class="op">=</span><span class="dv">256</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-10"><a href="#cb11-10"></a>  (<span class="dv">3</span>): Linear(in_features<span class="op">=</span><span class="dv">256</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-11"><a href="#cb11-11"></a>  (<span class="dv">4</span>): Linear(in_features<span class="op">=</span><span class="dv">256</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-12"><a href="#cb11-12"></a>  (<span class="dv">5</span>): Linear(in_features<span class="op">=</span><span class="dv">319</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-13"><a href="#cb11-13"></a>  (<span class="dv">6</span>): Linear(in_features<span class="op">=</span><span class="dv">256</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-14"><a href="#cb11-14"></a>  (<span class="dv">7</span>): Linear(in_features<span class="op">=</span><span class="dv">256</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-15"><a href="#cb11-15"></a>)</span>
+<span id="cb11-16"><a href="#cb11-16"></a>List <span class="dv">2</span>: ModuleList(</span>
+<span id="cb11-17"><a href="#cb11-17"></a>  (<span class="dv">0</span>): Linear(in_features<span class="op">=</span><span class="dv">63</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-18"><a href="#cb11-18"></a>  (<span class="dv">1</span>): Linear(in_features<span class="op">=</span><span class="dv">256</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-19"><a href="#cb11-19"></a>  (<span class="dv">2</span>): Linear(in_features<span class="op">=</span><span class="dv">256</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-20"><a href="#cb11-20"></a>  (<span class="dv">3</span>): Linear(in_features<span class="op">=</span><span class="dv">256</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-21"><a href="#cb11-21"></a>  (<span class="dv">4</span>): Linear(in_features<span class="op">=</span><span class="dv">319</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-22"><a href="#cb11-22"></a>  (<span class="dv">5</span>): Linear(in_features<span class="op">=</span><span class="dv">256</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-23"><a href="#cb11-23"></a>  (<span class="dv">6</span>): Linear(in_features<span class="op">=</span><span class="dv">256</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-24"><a href="#cb11-24"></a>  (<span class="dv">7</span>): Linear(in_features<span class="op">=</span><span class="dv">256</span>, out_features<span class="op">=</span><span class="dv">256</span>, bias<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-25"><a href="#cb11-25"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="sec-w23-nerf" class="level1 page-columns page-full" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Winter 2023 implementation of BlockSpec integrated vanilla NeRF model (<code>W23NeRF</code>)</h1>
+<p>This model is used as a pseudo-baseline to identify any bugs/discrepancies in either this (W’23) implementation or the GenNerf implementation. Eddy performed a lot of experiments in W’23 which we don’t necessarily want to throw out, but it’s important to ensure that the results can be replicated, and if not, understand where exactly the limitations lie.</p>
+<p>The model modifies the core implementation from <a href="#sec-nerf-pytorch">Section&nbsp;2</a>, and showed how it could be integrated with the DarwinAI SDK.</p>
+<div id="lst-w23-nerf-implementation" class="cell" data-execution_count="12">
+<details>
+<summary>Core implementation of <code>W23NeRF</code> model (modified by Eddy to enable integration with DarwinAI SDK)</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">class</span> W23NeRF(nn.Module):</span>
+<span id="cb12-2"><a href="#cb12-2"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(</span>
+<span id="cb12-3"><a href="#cb12-3"></a>        <span class="va">self</span>,</span>
+<span id="cb12-4"><a href="#cb12-4"></a>        blockspec: Optional[List[BlockSpec]],</span>
+<span id="cb12-5"><a href="#cb12-5"></a>        input_ch<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb12-6"><a href="#cb12-6"></a>        input_ch_views<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb12-7"><a href="#cb12-7"></a>        output_ch<span class="op">=</span><span class="dv">4</span>,</span>
+<span id="cb12-8"><a href="#cb12-8"></a>        skips<span class="op">=</span>[<span class="dv">4</span>],</span>
+<span id="cb12-9"><a href="#cb12-9"></a>        use_viewdirs<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb12-10"><a href="#cb12-10"></a>    ):</span>
+<span id="cb12-11"><a href="#cb12-11"></a>        <span class="co">"""Vanilla NeRF implementation in PyTorch with modifications by Eddy."""</span></span>
+<span id="cb12-12"><a href="#cb12-12"></a>        <span class="bu">super</span>(W23NeRF, <span class="va">self</span>).<span class="fu">__init__</span>()</span>
+<span id="cb12-13"><a href="#cb12-13"></a>        <span class="va">self</span>.blockspecs <span class="op">=</span> []</span>
+<span id="cb12-14"><a href="#cb12-14"></a>        <span class="cf">if</span> blockspec <span class="kw">is</span> <span class="va">None</span>:  <span class="co"># should there be no blockspec, revert to default values</span></span>
+<span id="cb12-15"><a href="#cb12-15"></a>            <span class="va">self</span>.blockspecs <span class="op">=</span> [BlockSpec(<span class="dv">256</span>, <span class="dv">8</span>), BlockSpec(<span class="dv">256</span>, <span class="dv">8</span>), BlockSpec(<span class="dv">256</span>, <span class="dv">8</span>)]</span>
+<span id="cb12-16"><a href="#cb12-16"></a>        <span class="cf">else</span>:</span>
+<span id="cb12-17"><a href="#cb12-17"></a>            <span class="va">self</span>.blockspecs <span class="op">=</span> blockspec</span>
+<span id="cb12-18"><a href="#cb12-18"></a></span>
+<span id="cb12-19"><a href="#cb12-19"></a>        <span class="va">self</span>.D <span class="op">=</span> <span class="va">self</span>.blockspecs[<span class="dv">2</span>].depth</span>
+<span id="cb12-20"><a href="#cb12-20"></a>        <span class="va">self</span>.W <span class="op">=</span> <span class="va">self</span>.blockspecs[<span class="dv">2</span>].channels</span>
+<span id="cb12-21"><a href="#cb12-21"></a>        <span class="va">self</span>.Ws <span class="op">=</span> []</span>
+<span id="cb12-22"><a href="#cb12-22"></a></span>
+<span id="cb12-23"><a href="#cb12-23"></a>        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>):</span>
+<span id="cb12-24"><a href="#cb12-24"></a>            <span class="va">self</span>.Ws.append(<span class="va">self</span>.blockspecs[i].channels)</span>
+<span id="cb12-25"><a href="#cb12-25"></a></span>
+<span id="cb12-26"><a href="#cb12-26"></a>        <span class="va">self</span>.input_ch <span class="op">=</span> input_ch</span>
+<span id="cb12-27"><a href="#cb12-27"></a>        <span class="va">self</span>.input_ch_views <span class="op">=</span> input_ch_views</span>
+<span id="cb12-28"><a href="#cb12-28"></a>        <span class="va">self</span>.skips <span class="op">=</span> []</span>
+<span id="cb12-29"><a href="#cb12-29"></a>        <span class="va">self</span>.skips.append(<span class="va">self</span>.D <span class="op">//</span> <span class="dv">2</span>)</span>
+<span id="cb12-30"><a href="#cb12-30"></a></span>
+<span id="cb12-31"><a href="#cb12-31"></a>        <span class="cf">if</span> <span class="va">self</span>.skips[<span class="dv">0</span>] <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb12-32"><a href="#cb12-32"></a>            <span class="cf">return</span></span>
+<span id="cb12-33"><a href="#cb12-33"></a>        <span class="va">self</span>.Ws.append(<span class="va">self</span>.skips)</span>
+<span id="cb12-34"><a href="#cb12-34"></a>        <span class="va">self</span>.use_viewdirs <span class="op">=</span> use_viewdirs</span>
+<span id="cb12-35"><a href="#cb12-35"></a></span>
+<span id="cb12-36"><a href="#cb12-36"></a>        <span class="va">self</span>.pts_linears <span class="op">=</span> nn.ModuleList([nn.Linear(input_ch, <span class="va">self</span>.Ws[<span class="dv">0</span>])])</span>
+<span id="cb12-37"><a href="#cb12-37"></a>        switch <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb12-38"><a href="#cb12-38"></a>        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.D <span class="op">-</span> <span class="dv">1</span>):</span>
+<span id="cb12-39"><a href="#cb12-39"></a>            <span class="cf">if</span> i <span class="kw">in</span> <span class="va">self</span>.skips:</span>
+<span id="cb12-40"><a href="#cb12-40"></a>                switch <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb12-41"><a href="#cb12-41"></a>                <span class="va">self</span>.pts_linears.append(nn.Linear(<span class="va">self</span>.Ws[<span class="dv">1</span>] <span class="op">+</span> input_ch, <span class="va">self</span>.Ws[<span class="dv">2</span>]))</span>
+<span id="cb12-42"><a href="#cb12-42"></a>                <span class="cf">continue</span></span>
+<span id="cb12-43"><a href="#cb12-43"></a></span>
+<span id="cb12-44"><a href="#cb12-44"></a>            <span class="cf">if</span> <span class="kw">not</span> switch:</span>
+<span id="cb12-45"><a href="#cb12-45"></a>                <span class="cf">if</span> i <span class="op">+</span> <span class="dv">1</span> <span class="kw">in</span> <span class="va">self</span>.skips:</span>
+<span id="cb12-46"><a href="#cb12-46"></a>                    <span class="va">self</span>.pts_linears.append(nn.Linear(<span class="va">self</span>.Ws[<span class="dv">0</span>], <span class="va">self</span>.Ws[<span class="dv">1</span>]))</span>
+<span id="cb12-47"><a href="#cb12-47"></a>                    <span class="cf">continue</span></span>
+<span id="cb12-48"><a href="#cb12-48"></a></span>
+<span id="cb12-49"><a href="#cb12-49"></a>                <span class="va">self</span>.pts_linears.append(nn.Linear(<span class="va">self</span>.Ws[<span class="dv">0</span>], <span class="va">self</span>.Ws[<span class="dv">0</span>]))</span>
+<span id="cb12-50"><a href="#cb12-50"></a>            <span class="cf">else</span>:</span>
+<span id="cb12-51"><a href="#cb12-51"></a>                <span class="va">self</span>.pts_linears.append(nn.Linear(<span class="va">self</span>.Ws[<span class="dv">2</span>], <span class="va">self</span>.Ws[<span class="dv">2</span>]))</span>
+<span id="cb12-52"><a href="#cb12-52"></a></span>
+<span id="cb12-53"><a href="#cb12-53"></a>        <span class="co">#         self.pts_linears = nn.ModuleList(</span></span>
+<span id="cb12-54"><a href="#cb12-54"></a>        <span class="co">#             [nn.Linear(input_ch, self.W)] + [nn.Linear(self.W, self.W)</span></span>
+<span id="cb12-55"><a href="#cb12-55"></a>        <span class="co">#               if i not in self.skips else nn.Linear(self.W + input_ch, self.W)</span></span>
+<span id="cb12-56"><a href="#cb12-56"></a>        <span class="co">#                   for i in range(self.D-1)])</span></span>
+<span id="cb12-57"><a href="#cb12-57"></a></span>
+<span id="cb12-58"><a href="#cb12-58"></a>        <span class="co">### Implementation according to the official code release (https://github.com/bmild/nerf/blob/master/run_nerf_helpers.py#L104-L105)</span></span>
+<span id="cb12-59"><a href="#cb12-59"></a>        <span class="va">self</span>.views_linears <span class="op">=</span> nn.ModuleList(</span>
+<span id="cb12-60"><a href="#cb12-60"></a>            [nn.Linear(input_ch_views <span class="op">+</span> <span class="va">self</span>.W, <span class="va">self</span>.W <span class="op">//</span> <span class="dv">2</span>)]</span>
+<span id="cb12-61"><a href="#cb12-61"></a>        )</span>
+<span id="cb12-62"><a href="#cb12-62"></a></span>
+<span id="cb12-63"><a href="#cb12-63"></a>        <span class="co">### Implementation according to the paper</span></span>
+<span id="cb12-64"><a href="#cb12-64"></a>        <span class="co"># self.views_linears = nn.ModuleList(</span></span>
+<span id="cb12-65"><a href="#cb12-65"></a>        <span class="co">#     [nn.Linear(input_ch_views + W, W//2)] + [nn.Linear(W//2, W//2) for i in range(D//2)])</span></span>
+<span id="cb12-66"><a href="#cb12-66"></a></span>
+<span id="cb12-67"><a href="#cb12-67"></a>        <span class="cf">if</span> use_viewdirs:</span>
+<span id="cb12-68"><a href="#cb12-68"></a>            <span class="va">self</span>.feature_linear <span class="op">=</span> nn.Linear(<span class="va">self</span>.W, <span class="va">self</span>.W)</span>
+<span id="cb12-69"><a href="#cb12-69"></a>            <span class="va">self</span>.alpha_linear <span class="op">=</span> nn.Linear(<span class="va">self</span>.W, <span class="dv">1</span>)</span>
+<span id="cb12-70"><a href="#cb12-70"></a>            <span class="va">self</span>.rgb_linear <span class="op">=</span> nn.Linear(<span class="va">self</span>.W <span class="op">//</span> <span class="dv">2</span>, <span class="dv">3</span>)</span>
+<span id="cb12-71"><a href="#cb12-71"></a>        <span class="cf">else</span>:</span>
+<span id="cb12-72"><a href="#cb12-72"></a>            <span class="va">self</span>.output_linear <span class="op">=</span> nn.Linear(<span class="va">self</span>.W, output_ch)</span>
+<span id="cb12-73"><a href="#cb12-73"></a></span>
+<span id="cb12-74"><a href="#cb12-74"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, x):</span>
+<span id="cb12-75"><a href="#cb12-75"></a>        input_pts, input_views <span class="op">=</span> torch.split(</span>
+<span id="cb12-76"><a href="#cb12-76"></a>            x, [<span class="va">self</span>.input_ch, <span class="va">self</span>.input_ch_views], dim<span class="op">=-</span><span class="dv">1</span></span>
+<span id="cb12-77"><a href="#cb12-77"></a>        )</span>
+<span id="cb12-78"><a href="#cb12-78"></a>        h <span class="op">=</span> input_pts</span>
+<span id="cb12-79"><a href="#cb12-79"></a>        <span class="cf">for</span> i, l <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="va">self</span>.pts_linears):</span>
+<span id="cb12-80"><a href="#cb12-80"></a>            h <span class="op">=</span> <span class="va">self</span>.pts_linears[i](h)</span>
+<span id="cb12-81"><a href="#cb12-81"></a>            h <span class="op">=</span> F.relu(h)</span>
+<span id="cb12-82"><a href="#cb12-82"></a>            <span class="cf">if</span> i <span class="kw">in</span> <span class="va">self</span>.skips:</span>
+<span id="cb12-83"><a href="#cb12-83"></a>                h <span class="op">=</span> torch.cat([input_pts, h], <span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb12-84"><a href="#cb12-84"></a>        <span class="cf">if</span> <span class="va">self</span>.use_viewdirs:</span>
+<span id="cb12-85"><a href="#cb12-85"></a>            alpha <span class="op">=</span> <span class="va">self</span>.alpha_linear(h)</span>
+<span id="cb12-86"><a href="#cb12-86"></a>            feature <span class="op">=</span> <span class="va">self</span>.feature_linear(h)</span>
+<span id="cb12-87"><a href="#cb12-87"></a>            h <span class="op">=</span> torch.cat([feature, input_views], <span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb12-88"><a href="#cb12-88"></a></span>
+<span id="cb12-89"><a href="#cb12-89"></a>            <span class="cf">for</span> i, l <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="va">self</span>.views_linears):</span>
+<span id="cb12-90"><a href="#cb12-90"></a>                h <span class="op">=</span> <span class="va">self</span>.views_linears[i](h)</span>
+<span id="cb12-91"><a href="#cb12-91"></a>                h <span class="op">=</span> F.relu(h)</span>
+<span id="cb12-92"><a href="#cb12-92"></a></span>
+<span id="cb12-93"><a href="#cb12-93"></a>            rgb <span class="op">=</span> <span class="va">self</span>.rgb_linear(h)</span>
+<span id="cb12-94"><a href="#cb12-94"></a>            outputs <span class="op">=</span> torch.cat([rgb, alpha], <span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb12-95"><a href="#cb12-95"></a>        <span class="cf">else</span>:</span>
+<span id="cb12-96"><a href="#cb12-96"></a>            outputs <span class="op">=</span> <span class="va">self</span>.output_linear(h)</span>
+<span id="cb12-97"><a href="#cb12-97"></a></span>
+<span id="cb12-98"><a href="#cb12-98"></a>        <span class="cf">return</span> outputs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="creating-a-w23nerf-model" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="creating-a-w23nerf-model"><span class="header-section-number">4.1</span> Creating a <code>W23NeRF</code> model</h2>
+<p>We define a <code>make_model_w23()</code> function which creates a <code>W23NeRF</code> model in a manner that satisfies the <code>darwinai.torch.builder.build_model()</code> API and its <code>model_fn</code> argument. It takes in <code>blockspecs</code> which should map to the desired architecture of the original vanilla NeRF Field’s base MLP.</p>
+<div class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">def</span> make_model_w23(blockspecs: BlockSpecs, return_metadata<span class="op">=</span><span class="va">False</span>):</span>
+<span id="cb13-2"><a href="#cb13-2"></a>    INPUT_CH <span class="op">=</span> <span class="dv">63</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a>    OUTPUT_CH <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb13-4"><a href="#cb13-4"></a>    SKIPS <span class="op">=</span> [<span class="dv">4</span>]</span>
+<span id="cb13-5"><a href="#cb13-5"></a>    INPUT_CH_VIEWS <span class="op">=</span> <span class="dv">27</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a>    USE_VIEWDIRS <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a></span>
+<span id="cb13-8"><a href="#cb13-8"></a>    model <span class="op">=</span> W23NeRF(</span>
+<span id="cb13-9"><a href="#cb13-9"></a>        blockspecs,</span>
+<span id="cb13-10"><a href="#cb13-10"></a>        input_ch<span class="op">=</span>INPUT_CH,</span>
+<span id="cb13-11"><a href="#cb13-11"></a>        output_ch<span class="op">=</span>OUTPUT_CH,</span>
+<span id="cb13-12"><a href="#cb13-12"></a>        skips<span class="op">=</span>SKIPS,</span>
+<span id="cb13-13"><a href="#cb13-13"></a>        input_ch_views<span class="op">=</span>INPUT_CH_VIEWS,</span>
+<span id="cb13-14"><a href="#cb13-14"></a>        use_viewdirs<span class="op">=</span>USE_VIEWDIRS,</span>
+<span id="cb13-15"><a href="#cb13-15"></a>    )</span>
+<span id="cb13-16"><a href="#cb13-16"></a></span>
+<span id="cb13-17"><a href="#cb13-17"></a>    <span class="cf">if</span> return_metadata:</span>
+<span id="cb13-18"><a href="#cb13-18"></a>        <span class="cf">return</span> model, INPUT_CH, INPUT_CH_VIEWS, OUTPUT_CH, SKIPS</span>
+<span id="cb13-19"><a href="#cb13-19"></a>    <span class="cf">else</span>:</span>
+<span id="cb13-20"><a href="#cb13-20"></a>        <span class="cf">return</span> model</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="reproducing-vanilla-nerf-architecture" class="level2 page-columns page-full" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="reproducing-vanilla-nerf-architecture"><span class="header-section-number">4.2</span> Reproducing Vanilla NeRF architecture</h2>
+<section id="expected-initial-blockspecs" class="level3 page-columns page-full" data-number="4.2.1">
+<h3 data-number="4.2.1" class="anchored" data-anchor-id="expected-initial-blockspecs"><span class="header-section-number">4.2.1</span> Expected initial blockspecs</h3>
+<p>The following <code>BlockSpecs</code> should theoretically result in the same model as the vanilla NeRF model.</p>
+<div class="cell" data-execution_count="14">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1"></a>initial_blockspecs_to_reproduce_vanilla <span class="op">=</span> BlockSpecs(</span>
+<span id="cb14-2"><a href="#cb14-2"></a>    [</span>
+<span id="cb14-3"><a href="#cb14-3"></a>        BlockSpec(<span class="dv">256</span>, <span class="dv">8</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb14-4"><a href="#cb14-4"></a>        BlockSpec(<span class="dv">256</span>, <span class="dv">8</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb14-5"><a href="#cb14-5"></a>        BlockSpec(<span class="dv">256</span>, <span class="dv">8</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb14-6"><a href="#cb14-6"></a>    ]</span>
+<span id="cb14-7"><a href="#cb14-7"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The resulting architecture with the above <code>BlockSpecs</code> is shown below:</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>ModuleList (pts_linear)</code> is the module corresponding to the <code>MLP Base</code> which we’re optimizing. Also while the class is named <code>W23NeRF</code>, it’s more apt to think of it as the <code>Field</code> component of the Vanilla NeRF model, and not the complete NeRF model itself.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The <code>W23NeRF</code> model is identical to the <code>nerf-pytorch</code> implementation of the vanilla NeRF model. However, this means it suffers from the same <em>potential</em> bug as the <code>nerf-pytorch</code> implementation, where the skip connection is applied at the 6th layer, instead of the 5th layer.</p>
+</div>
+</div>
+<div class="cell page-columns page-full" data-execution_count="15">
+<details>
+<summary>Detailed architecture summary of <code>W23NeRF</code> model.</summary>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1"></a>model_w23, input_ch, input_ch_views, <span class="op">*</span>rest <span class="op">=</span> make_model_w23(</span>
+<span id="cb15-2"><a href="#cb15-2"></a>    initial_blockspecs_to_reproduce_vanilla, return_metadata<span class="op">=</span><span class="va">True</span></span>
+<span id="cb15-3"><a href="#cb15-3"></a>)</span>
+<span id="cb15-4"><a href="#cb15-4"></a>summary(model_w23, input_size<span class="op">=</span>(input_ch <span class="op">+</span> input_ch_views,))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display column-page-right" data-execution_count="15">
+<pre><code>========================================================================================================================
+Layer (type (var_name):depth-idx)        Input Shape      Output Shape     Param #          Param %          Mult-Adds
+========================================================================================================================
+W23NeRF (W23NeRF)                        [90]             [4]              --                    --          --
+├─ModuleList (pts_linears): 1-1          --               --               --                    --          --
+│    └─Linear (0): 2-1                   [63]             [256]            16,384             2.75%          4,194,304
+│    └─Linear (1): 2-2                   [256]            [256]            65,792            11.04%          16,842,752
+│    └─Linear (2): 2-3                   [256]            [256]            65,792            11.04%          16,842,752
+│    └─Linear (3): 2-4                   [256]            [256]            65,792            11.04%          16,842,752
+│    └─Linear (4): 2-5                   [256]            [256]            65,792            11.04%          16,842,752
+│    └─Linear (5): 2-6                   [319]            [256]            81,920            13.75%          20,971,520
+│    └─Linear (6): 2-7                   [256]            [256]            65,792            11.04%          16,842,752
+│    └─Linear (7): 2-8                   [256]            [256]            65,792            11.04%          16,842,752
+├─Linear (alpha_linear): 1-2             [256]            [1]              257                0.04%          257
+├─Linear (feature_linear): 1-3           [256]            [256]            65,792            11.04%          16,842,752
+├─ModuleList (views_linears): 1-4        --               --               --                    --          --
+│    └─Linear (0): 2-9                   [283]            [128]            36,352             6.10%          4,653,056
+├─Linear (rgb_linear): 1-5               [128]            [3]              387                0.06%          1,161
+========================================================================================================================
+Total params: 595,844
+Trainable params: 595,844
+Non-trainable params: 0
+Total mult-adds (M): 147.72
+========================================================================================================================
+Input size (MB): 0.00
+Forward/backward pass size (MB): 0.02
+Params size (MB): 2.38
+Estimated Total Size (MB): 2.40
+========================================================================================================================</code></pre>
+</div>
+</div>
+</section>
+<section id="initial-blockspecs-with-large-initial-depths" class="level3 page-columns page-full" data-number="4.2.2">
+<h3 data-number="4.2.2" class="anchored" data-anchor-id="initial-blockspecs-with-large-initial-depths"><span class="header-section-number">4.2.2</span> Initial BlockSpecs with large initial depths</h3>
+<p>Now as an exercise, let’s try modifying the <code>BlockSpecs</code> input so that the initial depths for the first two blocks are arbitrarily large numbers. However, note that</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Potential Bug?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The resulting architecture is identical to the previous one, despite the new large depths specified for block 2 and 3. This indicates that the <code>W23NeRF</code> model does not actually take into account the depths for the first two blocks (this can be verified by looking at the implementation of <code>W23NeRF</code> in <a href="#sec-w23-nerf">Section&nbsp;4</a>).</p>
+</div>
+</div>
+<div class="cell" data-execution_count="16">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1"></a>initial_blockspecs_test_large <span class="op">=</span> BlockSpecs(</span>
+<span id="cb17-2"><a href="#cb17-2"></a>    [</span>
+<span id="cb17-3"><a href="#cb17-3"></a>        BlockSpec(<span class="dv">256</span>, <span class="dv">100000</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb17-4"><a href="#cb17-4"></a>        BlockSpec(<span class="dv">256</span>, <span class="dv">23904890238094283</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb17-5"><a href="#cb17-5"></a>        BlockSpec(<span class="dv">256</span>, <span class="dv">8</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb17-6"><a href="#cb17-6"></a>    ]</span>
+<span id="cb17-7"><a href="#cb17-7"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell page-columns page-full" data-execution_count="17">
+<details>
+<summary>Detailed architecture summary of <code>W23NeRF</code> model.</summary>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1"></a>model_w23, input_ch, input_ch_views, <span class="op">*</span>rest <span class="op">=</span> make_model_w23(</span>
+<span id="cb18-2"><a href="#cb18-2"></a>    initial_blockspecs_test_large, return_metadata<span class="op">=</span><span class="va">True</span></span>
+<span id="cb18-3"><a href="#cb18-3"></a>)</span>
+<span id="cb18-4"><a href="#cb18-4"></a>summary(model_w23, input_size<span class="op">=</span>(input_ch <span class="op">+</span> input_ch_views,))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display column-page-right" data-execution_count="17">
+<pre><code>========================================================================================================================
+Layer (type (var_name):depth-idx)        Input Shape      Output Shape     Param #          Param %          Mult-Adds
+========================================================================================================================
+W23NeRF (W23NeRF)                        [90]             [4]              --                    --          --
+├─ModuleList (pts_linears): 1-1          --               --               --                    --          --
+│    └─Linear (0): 2-1                   [63]             [256]            16,384             2.75%          4,194,304
+│    └─Linear (1): 2-2                   [256]            [256]            65,792            11.04%          16,842,752
+│    └─Linear (2): 2-3                   [256]            [256]            65,792            11.04%          16,842,752
+│    └─Linear (3): 2-4                   [256]            [256]            65,792            11.04%          16,842,752
+│    └─Linear (4): 2-5                   [256]            [256]            65,792            11.04%          16,842,752
+│    └─Linear (5): 2-6                   [319]            [256]            81,920            13.75%          20,971,520
+│    └─Linear (6): 2-7                   [256]            [256]            65,792            11.04%          16,842,752
+│    └─Linear (7): 2-8                   [256]            [256]            65,792            11.04%          16,842,752
+├─Linear (alpha_linear): 1-2             [256]            [1]              257                0.04%          257
+├─Linear (feature_linear): 1-3           [256]            [256]            65,792            11.04%          16,842,752
+├─ModuleList (views_linears): 1-4        --               --               --                    --          --
+│    └─Linear (0): 2-9                   [283]            [128]            36,352             6.10%          4,653,056
+├─Linear (rgb_linear): 1-5               [128]            [3]              387                0.06%          1,161
+========================================================================================================================
+Total params: 595,844
+Trainable params: 595,844
+Non-trainable params: 0
+Total mult-adds (M): 147.72
+========================================================================================================================
+Input size (MB): 0.00
+Forward/backward pass size (MB): 0.02
+Params size (MB): 2.38
+Estimated Total Size (MB): 2.40
+========================================================================================================================</code></pre>
+</div>
+</div>
+</section>
+<section id="initial-blockspecs-with-small-initial-depth-for-block-3" class="level3 page-columns page-full" data-number="4.2.3">
+<h3 data-number="4.2.3" class="anchored" data-anchor-id="initial-blockspecs-with-small-initial-depth-for-block-3"><span class="header-section-number">4.2.3</span> Initial blockspecs with small initial depth for block 3</h3>
+<p>However, if we modify the initial depth for block 3, we see that the resulting architecture is different. This indicates that the <code>W23NeRF</code> model does take into account the depth for the third block.</p>
+<div class="cell" data-execution_count="18">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1"></a>initial_blockspecs_test_small_block3_depth <span class="op">=</span> BlockSpecs(</span>
+<span id="cb20-2"><a href="#cb20-2"></a>    [</span>
+<span id="cb20-3"><a href="#cb20-3"></a>        BlockSpec(<span class="dv">256</span>, <span class="dv">8</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb20-4"><a href="#cb20-4"></a>        BlockSpec(<span class="dv">256</span>, <span class="dv">8</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb20-5"><a href="#cb20-5"></a>        BlockSpec(<span class="dv">256</span>, <span class="dv">4</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb20-6"><a href="#cb20-6"></a>    ]</span>
+<span id="cb20-7"><a href="#cb20-7"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell page-columns page-full" data-execution_count="19">
+<details>
+<summary>Detailed architecture summary of <code>W23NeRF</code> model.</summary>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1"></a>model_w23, input_ch, input_ch_views, <span class="op">*</span>rest <span class="op">=</span> make_model_w23(</span>
+<span id="cb21-2"><a href="#cb21-2"></a>    initial_blockspecs_test_small_block3_depth, return_metadata<span class="op">=</span><span class="va">True</span></span>
+<span id="cb21-3"><a href="#cb21-3"></a>)</span>
+<span id="cb21-4"><a href="#cb21-4"></a>summary(model_w23, input_size<span class="op">=</span>(input_ch <span class="op">+</span> input_ch_views,))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display column-page-right" data-execution_count="19">
+<pre><code>========================================================================================================================
+Layer (type (var_name):depth-idx)        Input Shape      Output Shape     Param #          Param %          Mult-Adds
+========================================================================================================================
+W23NeRF (W23NeRF)                        [90]             [4]              --                    --          --
+├─ModuleList (pts_linears): 1-1          --               --               --                    --          --
+│    └─Linear (0): 2-1                   [63]             [256]            16,384             4.92%          4,194,304
+│    └─Linear (1): 2-2                   [256]            [256]            65,792            19.78%          16,842,752
+│    └─Linear (2): 2-3                   [256]            [256]            65,792            19.78%          16,842,752
+│    └─Linear (3): 2-4                   [319]            [256]            81,920            24.62%          20,971,520
+├─Linear (alpha_linear): 1-2             [256]            [1]              257                0.08%          257
+├─Linear (feature_linear): 1-3           [256]            [256]            65,792            19.78%          16,842,752
+├─ModuleList (views_linears): 1-4        --               --               --                    --          --
+│    └─Linear (0): 2-5                   [283]            [128]            36,352            10.93%          4,653,056
+├─Linear (rgb_linear): 1-5               [128]            [3]              387                0.12%          1,161
+========================================================================================================================
+Total params: 332,676
+Trainable params: 332,676
+Non-trainable params: 0
+Total mult-adds (M): 80.35
+========================================================================================================================
+Input size (MB): 0.00
+Forward/backward pass size (MB): 0.01
+Params size (MB): 1.33
+Estimated Total Size (MB): 1.34
+========================================================================================================================</code></pre>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="sec-gen-nerf" class="level1 page-columns page-full" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Gen-NeRF Vanilla Model (<code>GenNerf</code>)</h1>
+<div class="cell" data-execution_count="20">
+<details>
+<summary>Architecture summary of <code>GenNerf</code> model.</summary>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1"></a>gen_nerf_pipeline_cfg <span class="op">=</span> GenNerfPipelineConfig()</span>
+<span id="cb23-2"><a href="#cb23-2"></a>gen_nerf_cfg <span class="op">=</span> GenNerfModelConfig()</span>
+<span id="cb23-3"><a href="#cb23-3"></a>scene_box <span class="op">=</span> SceneBox(</span>
+<span id="cb23-4"><a href="#cb23-4"></a>    aabb<span class="op">=</span>torch.tensor([[<span class="op">-</span><span class="fl">1.5</span>, <span class="op">-</span><span class="fl">1.5</span>, <span class="op">-</span><span class="fl">1.5</span>], [<span class="fl">1.5</span>, <span class="fl">1.5</span>, <span class="fl">1.5</span>]], dtype<span class="op">=</span>torch.float32)</span>
+<span id="cb23-5"><a href="#cb23-5"></a>)</span>
+<span id="cb23-6"><a href="#cb23-6"></a>gen_nerf <span class="op">=</span> gen_nerf_cfg.setup(</span>
+<span id="cb23-7"><a href="#cb23-7"></a>    scene_box<span class="op">=</span>scene_box,</span>
+<span id="cb23-8"><a href="#cb23-8"></a>    num_train_data<span class="op">=</span><span class="dv">100</span>,</span>
+<span id="cb23-9"><a href="#cb23-9"></a>)</span>
+<span id="cb23-10"><a href="#cb23-10"></a>summary(gen_nerf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="20">
+<pre><code>============================================================================
+Layer (type (var_name):depth-idx)                            Param #
+============================================================================
+GenNerfModel (GenNerfModel)                                  --
+├─NearFarCollider (collider): 1-1                            --
+├─GenNerfField (field_coarse): 1-2                           --
+│    └─NeRFEncoding (position_encoding): 2-1                 --
+│    └─NeRFEncoding (direction_encoding): 2-2                --
+│    └─CompressibleMLP (mlp_base): 2-3                       --
+│    │    └─ReLU (activation): 3-1                           --
+│    │    └─ReLU (out_activation): 3-2                       --
+│    │    └─ModuleList (layers): 3-3                         --
+│    │    │    └─Linear (0): 4-1                             16,384
+│    │    │    └─Linear (1): 4-2                             65,792
+│    │    │    └─Linear (2): 4-3                             65,792
+│    │    │    └─Linear (3): 4-4                             65,792
+│    │    │    └─Linear (4): 4-5                             81,920
+│    │    │    └─Linear (5): 4-6                             65,792
+│    │    │    └─Linear (6): 4-7                             65,792
+│    │    │    └─Linear (7): 4-8                             65,792
+│    └─MLP (mlp_head): 2-4                                   --
+│    │    └─ReLU (activation): 3-4                           --
+│    │    └─ReLU (out_activation): 3-5                       --
+│    │    └─ModuleList (layers): 3-6                         --
+│    │    │    └─Linear (0): 4-9                             36,352
+│    │    │    └─Linear (1): 4-10                            16,512
+│    └─DensityFieldHead (field_output_density): 2-5          --
+│    │    └─Softplus (activation): 3-7                       --
+│    │    └─Linear (net): 3-8                                257
+│    └─ModuleList (field_heads): 2-6                         --
+│    │    └─RGBFieldHead (0): 3-9                            --
+│    │    │    └─Sigmoid (activation): 4-11                  --
+│    │    │    └─Linear (net): 4-12                          387
+├─GenNerfField (field_fine): 1-3                             --
+│    └─NeRFEncoding (position_encoding): 2-7                 --
+│    └─NeRFEncoding (direction_encoding): 2-8                --
+│    └─CompressibleMLP (mlp_base): 2-9                       --
+│    │    └─ReLU (activation): 3-10                          --
+│    │    └─ReLU (out_activation): 3-11                      --
+│    │    └─ModuleList (layers): 3-12                        --
+│    │    │    └─Linear (0): 4-13                            16,384
+│    │    │    └─Linear (1): 4-14                            65,792
+│    │    │    └─Linear (2): 4-15                            65,792
+│    │    │    └─Linear (3): 4-16                            65,792
+│    │    │    └─Linear (4): 4-17                            81,920
+│    │    │    └─Linear (5): 4-18                            65,792
+│    │    │    └─Linear (6): 4-19                            65,792
+│    │    │    └─Linear (7): 4-20                            65,792
+│    └─MLP (mlp_head): 2-10                                  --
+│    │    └─ReLU (activation): 3-13                          --
+│    │    └─ReLU (out_activation): 3-14                      --
+│    │    └─ModuleList (layers): 3-15                        --
+│    │    │    └─Linear (0): 4-21                            36,352
+│    │    │    └─Linear (1): 4-22                            16,512
+│    └─DensityFieldHead (field_output_density): 2-11         --
+│    │    └─Softplus (activation): 3-16                      --
+│    │    └─Linear (net): 3-17                               257
+│    └─ModuleList (field_heads): 2-12                        387
+│    │    └─RGBFieldHead (0): 3-18                           (recursive)
+│    │    │    └─Sigmoid (activation): 4-23                  --
+│    │    │    └─Linear (net): 4-24                          (recursive)
+├─UniformSampler (sampler_uniform): 1-4                      --
+├─PDFSampler (sampler_pdf): 1-5                              --
+├─RGBRenderer (renderer_rgb): 1-6                            --
+├─AccumulationRenderer (renderer_accumulation): 1-7          --
+├─DepthRenderer (renderer_depth): 1-8                        --
+├─MSELoss (rgb_loss): 1-9                                    --
+├─PeakSignalNoiseRatio (psnr): 1-10                          --
+├─LearnedPerceptualImagePatchSimilarity (lpips): 1-11        --
+│    └─NoTrainLpips (net): 2-13                              --
+│    │    └─ScalingLayer (scaling_layer): 3-19               --
+│    │    └─alexnet (net): 3-20                              --
+│    │    │    └─Sequential (slice1): 4-25                   (23,296)
+│    │    │    └─Sequential (slice2): 4-26                   (307,392)
+│    │    │    └─Sequential (slice3): 4-27                   (663,936)
+│    │    │    └─Sequential (slice4): 4-28                   (884,992)
+│    │    │    └─Sequential (slice5): 4-29                   (590,080)
+│    │    └─NetLinLayer (lin0): 3-21                         --
+│    │    │    └─Sequential (model): 4-30                    64
+│    │    └─NetLinLayer (lin1): 3-22                         --
+│    │    │    └─Sequential (model): 4-31                    192
+│    │    └─NetLinLayer (lin2): 3-23                         --
+│    │    │    └─Sequential (model): 4-32                    384
+│    │    └─NetLinLayer (lin3): 3-24                         --
+│    │    │    └─Sequential (model): 4-33                    256
+│    │    └─NetLinLayer (lin4): 3-25                         --
+│    │    │    └─Sequential (model): 4-34                    256
+│    │    └─ModuleList (lins): 3-26                          1,152
+│    │    │    └─NetLinLayer (0): 4-35                       (recursive)
+│    │    │    └─NetLinLayer (1): 4-36                       (recursive)
+│    │    │    └─NetLinLayer (2): 4-37                       (recursive)
+│    │    │    └─NetLinLayer (3): 4-38                       (recursive)
+│    │    │    └─NetLinLayer (4): 4-39                       (recursive)
+============================================================================
+Total params: 3,565,128
+Trainable params: 1,095,432
+Non-trainable params: 2,469,696
+============================================================================</code></pre>
+</div>
+</div>
+<section id="coarse-field-base-mlp-architecture-2" class="level2 page-columns page-full" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="coarse-field-base-mlp-architecture-2"><span class="header-section-number">5.1</span> Coarse Field Base MLP Architecture</h2>
+<div class="cell page-columns page-full" data-execution_count="21">
+<details>
+<summary>Detailed architecture summary for <code>GenNerf</code> coarse field base MLP</summary>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1"></a>summary(gen_nerf.field_coarse.mlp_base, input_size<span class="op">=</span>(<span class="dv">63</span>,))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="gen_nerf-coarse-base-mlp-summary" class="cell-output cell-output-display column-page-right" data-execution_count="21">
+<pre><code>========================================================================================================================
+Layer (type (var_name):depth-idx)        Input Shape      Output Shape     Param #          Param %          Mult-Adds
+========================================================================================================================
+CompressibleMLP (CompressibleMLP)        [63]             [256]            --                    --          --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (0): 2-1                   [63]             [256]            16,384             3.32%          4,194,304
+├─ReLU (activation): 1-2                 [256]            [256]            --                    --          --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (1): 2-2                   [256]            [256]            65,792            13.34%          16,842,752
+├─ReLU (activation): 1-4                 [256]            [256]            --               (recursive)      --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (2): 2-3                   [256]            [256]            65,792            13.34%          16,842,752
+├─ReLU (activation): 1-6                 [256]            [256]            --               (recursive)      --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (3): 2-4                   [256]            [256]            65,792            13.34%          16,842,752
+├─ReLU (activation): 1-8                 [256]            [256]            --               (recursive)      --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (4): 2-5                   [319]            [256]            81,920            16.61%          20,971,520
+├─ReLU (activation): 1-10                [256]            [256]            --               (recursive)      --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (5): 2-6                   [256]            [256]            65,792            13.34%          16,842,752
+├─ReLU (activation): 1-12                [256]            [256]            --               (recursive)      --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (6): 2-7                   [256]            [256]            65,792            13.34%          16,842,752
+├─ReLU (activation): 1-14                [256]            [256]            --               (recursive)      --
+├─ModuleList (layers): 1-15              --               --               (recursive)      (recursive)      --
+│    └─Linear (7): 2-8                   [256]            [256]            65,792            13.34%          16,842,752
+├─ReLU (out_activation): 1-16            [256]            [256]            --                    --          --
+========================================================================================================================
+Total params: 493,056
+Trainable params: 493,056
+Non-trainable params: 0
+Total mult-adds (M): 126.22
+========================================================================================================================
+Input size (MB): 0.00
+Forward/backward pass size (MB): 0.02
+Params size (MB): 1.97
+Estimated Total Size (MB): 1.99
+========================================================================================================================</code></pre>
+</div>
+</div>
+</section>
+<section id="reproducing-vanilla-nerf-architecture-1" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="reproducing-vanilla-nerf-architecture-1"><span class="header-section-number">5.2</span> Reproducing Vanilla NeRF architecture</h2>
+<p>Let’s validate that the default <code>GenNerf</code> model base MLP is identical to the <code>VanillaNeRF</code> model.</p>
+<div class="cell" data-execution_count="22">
+<details>
+<summary>Test case demonstrating that default <code>GenNerf</code> matches <code>VanillaNerf</code> implementation for the base MLP</summary>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1"></a>vanilla_pipeline_cfg <span class="op">=</span> VanillaPipelineConfig()</span>
+<span id="cb27-2"><a href="#cb27-2"></a>vanilla_nerf_cfg <span class="op">=</span> VanillaModelConfig()</span>
+<span id="cb27-3"><a href="#cb27-3"></a>dummy_datamanager <span class="op">=</span> vanilla_pipeline_cfg.datamanager</span>
+<span id="cb27-4"><a href="#cb27-4"></a>scene_box <span class="op">=</span> SceneBox(</span>
+<span id="cb27-5"><a href="#cb27-5"></a>    aabb<span class="op">=</span>torch.tensor([[<span class="op">-</span><span class="fl">1.5</span>, <span class="op">-</span><span class="fl">1.5</span>, <span class="op">-</span><span class="fl">1.5</span>], [<span class="fl">1.5</span>, <span class="fl">1.5</span>, <span class="fl">1.5</span>]], dtype<span class="op">=</span>torch.float32)</span>
+<span id="cb27-6"><a href="#cb27-6"></a>)</span>
+<span id="cb27-7"><a href="#cb27-7"></a>vanilla_nerf <span class="op">=</span> vanilla_nerf_cfg.setup(</span>
+<span id="cb27-8"><a href="#cb27-8"></a>    scene_box<span class="op">=</span>scene_box,</span>
+<span id="cb27-9"><a href="#cb27-9"></a>    num_train_data<span class="op">=</span><span class="dv">100</span>,</span>
+<span id="cb27-10"><a href="#cb27-10"></a>).to(device<span class="op">=</span><span class="st">"cpu"</span>)</span>
+<span id="cb27-11"><a href="#cb27-11"></a></span>
+<span id="cb27-12"><a href="#cb27-12"></a>gen_nerf.to(device<span class="op">=</span><span class="st">"cpu"</span>)</span>
+<span id="cb27-13"><a href="#cb27-13"></a>test_module_lists_equal(</span>
+<span id="cb27-14"><a href="#cb27-14"></a>    gen_nerf.field_coarse.mlp_base.layers, vanilla_nerf.field_coarse.mlp_base.layers</span>
+<span id="cb27-15"><a href="#cb27-15"></a>)</span>
+<span id="cb27-16"><a href="#cb27-16"></a></span>
+<span id="cb27-17"><a href="#cb27-17"></a>input_shape <span class="op">=</span> [<span class="dv">63</span>]</span>
+<span id="cb27-18"><a href="#cb27-18"></a>baseline_flops <span class="op">=</span> get_flops(vanilla_nerf.field_coarse.mlp_base, input_shape)</span>
+<span id="cb27-19"><a href="#cb27-19"></a>baseline_params <span class="op">=</span> get_params(vanilla_nerf.field_coarse.mlp_base)</span>
+<span id="cb27-20"><a href="#cb27-20"></a></span>
+<span id="cb27-21"><a href="#cb27-21"></a>gen_nerf_base_mlp_flops <span class="op">=</span> get_flops(gen_nerf.field_coarse.mlp_base, input_shape)</span>
+<span id="cb27-22"><a href="#cb27-22"></a>gen_nerf_base_mlp_params <span class="op">=</span> get_params(gen_nerf.field_coarse.mlp_base)</span>
+<span id="cb27-23"><a href="#cb27-23"></a></span>
+<span id="cb27-24"><a href="#cb27-24"></a><span class="co"># Validate that GenNerf MLP Base matches VanillaNerf MLP Base flops and params</span></span>
+<span id="cb27-25"><a href="#cb27-25"></a><span class="cf">assert</span> (</span>
+<span id="cb27-26"><a href="#cb27-26"></a>    baseline_flops <span class="op">==</span> gen_nerf_base_mlp_flops</span>
+<span id="cb27-27"><a href="#cb27-27"></a>), <span class="ss">f"GenNerf MLP Base flops </span><span class="sc">{</span>gen_nerf_base_mlp_flops<span class="sc">}</span><span class="ss"> != VanillaNerf MLP Base flops </span><span class="sc">{</span>baseline_flops<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb27-28"><a href="#cb27-28"></a></span>
+<span id="cb27-29"><a href="#cb27-29"></a><span class="cf">assert</span> (</span>
+<span id="cb27-30"><a href="#cb27-30"></a>    baseline_params <span class="op">==</span> gen_nerf_base_mlp_params</span>
+<span id="cb27-31"><a href="#cb27-31"></a>), <span class="ss">f"GenNerf MLP Base params </span><span class="sc">{</span>gen_nerf_base_mlp_params<span class="sc">}</span><span class="ss"> != VanillaNerf MLP Base params </span><span class="sc">{</span>baseline_params<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb27-32"><a href="#cb27-32"></a></span>
+<span id="cb27-33"><a href="#cb27-33"></a><span class="bu">print</span>(<span class="ss">f"GenNerf MLP Base matches VanillaNerf MLP Base!"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>GenNerf MLP Base matches VanillaNerf MLP Base!</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="23">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1"></a>get_flops(</span>
+<span id="cb29-2"><a href="#cb29-2"></a>    vanilla_nerf.field_coarse.mlp_base,</span>
+<span id="cb29-3"><a href="#cb29-3"></a>    input_shape,</span>
+<span id="cb29-4"><a href="#cb29-4"></a>    verbose<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb29-5"><a href="#cb29-5"></a>    ret_layer_info<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb29-6"><a href="#cb29-6"></a>    report_missing<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb29-7"><a href="#cb29-7"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[INFO] Register zero_ops() for &lt;class 'torch.nn.modules.activation.ReLU'&gt;.
+[INFO] Register count_linear() for &lt;class 'torch.nn.modules.linear.Linear'&gt;.
+[WARN] Cannot find rule for &lt;class 'torch.nn.modules.container.ModuleList'&gt;. Treat it as zero Macs and zero Params.
+[WARN] Cannot find rule for &lt;class 'nerfstudio.field_components.mlp.MLP'&gt;. Treat it as zero Macs and zero Params.</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="23">
+<pre><code>(491008.0,
+ 493056.0,
+ {'activation': (0.0, 0.0, {}),
+  'out_activation': (0.0, 0.0, {}),
+  'layers': (491008.0,
+   493056.0,
+   {'0': (16128.0, 16384.0, {}),
+    '1': (65536.0, 65792.0, {}),
+    '2': (65536.0, 65792.0, {}),
+    '3': (65536.0, 65792.0, {}),
+    '4': (81664.0, 81920.0, {}),
+    '5': (65536.0, 65792.0, {}),
+    '6': (65536.0, 65792.0, {}),
+    '7': (65536.0, 65792.0, {})})})</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="24">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1"></a><span class="bu">print</span>(<span class="op">*</span>vanilla_nerf.field_coarse.mlp_base.named_children())</span>
+<span id="cb32-2"><a href="#cb32-2"></a></span>
+<span id="cb32-3"><a href="#cb32-3"></a><span class="cf">for</span> n, m <span class="kw">in</span> vanilla_nerf.field_coarse.mlp_base.named_children():</span>
+<span id="cb32-4"><a href="#cb32-4"></a>    <span class="cf">if</span> n <span class="op">==</span> <span class="st">"layers"</span>:</span>
+<span id="cb32-5"><a href="#cb32-5"></a>        <span class="bu">print</span>(<span class="ss">f"n: </span><span class="sc">{</span>m<span class="sc">.</span>total_ops<span class="sc">.</span>item()<span class="sc">}</span><span class="ss">, </span><span class="sc">{</span>m<span class="sc">.</span>total_params<span class="sc">.</span>item()<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>('activation', ReLU()) ('out_activation', ReLU()) ('layers', ModuleList(
+  (0): Linear(in_features=63, out_features=256, bias=True)
+  (1): Linear(in_features=256, out_features=256, bias=True)
+  (2): Linear(in_features=256, out_features=256, bias=True)
+  (3): Linear(in_features=256, out_features=256, bias=True)
+  (4): Linear(in_features=319, out_features=256, bias=True)
+  (5): Linear(in_features=256, out_features=256, bias=True)
+  (6): Linear(in_features=256, out_features=256, bias=True)
+  (7): Linear(in_features=256, out_features=256, bias=True)
+))
+n: 0.0, 0.0</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="25">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1"></a><span class="bu">print</span>(<span class="op">*</span>gen_nerf.field_coarse.mlp_base.named_children())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>('activation', ReLU()) ('out_activation', ReLU()) ('layers', ModuleList(
+  (0): Linear(in_features=63, out_features=256, bias=True)
+  (1): Linear(in_features=256, out_features=256, bias=True)
+  (2): Linear(in_features=256, out_features=256, bias=True)
+  (3): Linear(in_features=256, out_features=256, bias=True)
+  (4): Linear(in_features=319, out_features=256, bias=True)
+  (5): Linear(in_features=256, out_features=256, bias=True)
+  (6): Linear(in_features=256, out_features=256, bias=True)
+  (7): Linear(in_features=256, out_features=256, bias=True)
+))</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="26">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1"></a>get_flops(</span>
+<span id="cb36-2"><a href="#cb36-2"></a>    gen_nerf.field_coarse.mlp_base,</span>
+<span id="cb36-3"><a href="#cb36-3"></a>    input_shape,</span>
+<span id="cb36-4"><a href="#cb36-4"></a>    verbose<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb36-5"><a href="#cb36-5"></a>    ret_layer_info<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb36-6"><a href="#cb36-6"></a>    report_missing<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb36-7"><a href="#cb36-7"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[INFO] Register zero_ops() for &lt;class 'torch.nn.modules.activation.ReLU'&gt;.
+[INFO] Register count_linear() for &lt;class 'torch.nn.modules.linear.Linear'&gt;.
+[WARN] Cannot find rule for &lt;class 'torch.nn.modules.container.ModuleList'&gt;. Treat it as zero Macs and zero Params.
+[WARN] Cannot find rule for &lt;class 'gen_nerf.modules.mlp.CompressibleMLP'&gt;. Treat it as zero Macs and zero Params.</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="26">
+<pre><code>(491008.0,
+ 493056.0,
+ {'activation': (0.0, 0.0, {}),
+  'out_activation': (0.0, 0.0, {}),
+  'layers': (491008.0,
+   493056.0,
+   {'0': (16128.0, 16384.0, {}),
+    '1': (65536.0, 65792.0, {}),
+    '2': (65536.0, 65792.0, {}),
+    '3': (65536.0, 65792.0, {}),
+    '4': (81664.0, 81920.0, {}),
+    '5': (65536.0, 65792.0, {}),
+    '6': (65536.0, 65792.0, {}),
+    '7': (65536.0, 65792.0, {})})})</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="27">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1"></a>coarse_model, fine_model, grad_vars, input_ch, input_ch_views <span class="op">=</span> create_nerf()</span>
+<span id="cb39-2"><a href="#cb39-2"></a>get_flops(</span>
+<span id="cb39-3"><a href="#cb39-3"></a>    coarse_model,</span>
+<span id="cb39-4"><a href="#cb39-4"></a>    [<span class="dv">63</span> <span class="op">+</span> <span class="dv">27</span>],</span>
+<span id="cb39-5"><a href="#cb39-5"></a>    verbose<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb39-6"><a href="#cb39-6"></a>    ret_layer_info<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb39-7"><a href="#cb39-7"></a>    report_missing<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb39-8"><a href="#cb39-8"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[INFO] Register count_linear() for &lt;class 'torch.nn.modules.linear.Linear'&gt;.
+[WARN] Cannot find rule for &lt;class 'torch.nn.modules.container.ModuleList'&gt;. Treat it as zero Macs and zero Params.
+[WARN] Cannot find rule for &lt;class '__main__.PyTorchNeRF'&gt;. Treat it as zero Macs and zero Params.</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="27">
+<pre><code>(593408.0,
+ 595844.0,
+ {'pts_linears': (491008.0,
+   493056.0,
+   {'0': (16128.0, 16384.0, {}),
+    '1': (65536.0, 65792.0, {}),
+    '2': (65536.0, 65792.0, {}),
+    '3': (65536.0, 65792.0, {}),
+    '4': (65536.0, 65792.0, {}),
+    '5': (81664.0, 81920.0, {}),
+    '6': (65536.0, 65792.0, {}),
+    '7': (65536.0, 65792.0, {})}),
+  'views_linears': (36224.0, 36352.0, {'0': (36224.0, 36352.0, {})}),
+  'feature_linear': (65536.0, 65792.0, {}),
+  'alpha_linear': (256.0, 257.0, {}),
+  'rgb_linear': (384.0, 387.0, {})})</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="28">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1"></a>summary(gen_nerf.field_coarse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="28">
+<pre><code>==================================================================
+Layer (type (var_name):depth-idx)                  Param #
+==================================================================
+GenNerfField (GenNerfField)                        --
+├─NeRFEncoding (position_encoding): 1-1            --
+├─NeRFEncoding (direction_encoding): 1-2           --
+├─CompressibleMLP (mlp_base): 1-3                  --
+│    └─ReLU (activation): 2-1                      --
+│    └─ReLU (out_activation): 2-2                  --
+│    └─ModuleList (layers): 2-3                    --
+│    │    └─Linear (0): 3-1                        16,384
+│    │    └─Linear (1): 3-2                        65,792
+│    │    └─Linear (2): 3-3                        65,792
+│    │    └─Linear (3): 3-4                        65,792
+│    │    └─Linear (4): 3-5                        81,920
+│    │    └─Linear (5): 3-6                        65,792
+│    │    └─Linear (6): 3-7                        65,792
+│    │    └─Linear (7): 3-8                        65,792
+├─MLP (mlp_head): 1-4                              --
+│    └─ReLU (activation): 2-4                      --
+│    └─ReLU (out_activation): 2-5                  --
+│    └─ModuleList (layers): 2-6                    --
+│    │    └─Linear (0): 3-9                        36,352
+│    │    └─Linear (1): 3-10                       16,512
+├─DensityFieldHead (field_output_density): 1-5     --
+│    └─Softplus (activation): 2-7                  --
+│    └─Linear (net): 2-8                           257
+├─ModuleList (field_heads): 1-6                    --
+│    └─RGBFieldHead (0): 2-9                       --
+│    │    └─Sigmoid (activation): 3-11             --
+│    │    └─Linear (net): 3-12                     387
+==================================================================
+Total params: 546,564
+Trainable params: 546,564
+Non-trainable params: 0
+==================================================================</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="29">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1"></a>summary(vanilla_nerf.field_coarse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="29">
+<pre><code>==================================================================
+Layer (type (var_name):depth-idx)                  Param #
+==================================================================
+NeRFField (NeRFField)                              --
+├─NeRFEncoding (position_encoding): 1-1            --
+├─NeRFEncoding (direction_encoding): 1-2           --
+├─MLP (mlp_base): 1-3                              --
+│    └─ReLU (activation): 2-1                      --
+│    └─ReLU (out_activation): 2-2                  --
+│    └─ModuleList (layers): 2-3                    --
+│    │    └─Linear (0): 3-1                        16,384
+│    │    └─Linear (1): 3-2                        65,792
+│    │    └─Linear (2): 3-3                        65,792
+│    │    └─Linear (3): 3-4                        65,792
+│    │    └─Linear (4): 3-5                        81,920
+│    │    └─Linear (5): 3-6                        65,792
+│    │    └─Linear (6): 3-7                        65,792
+│    │    └─Linear (7): 3-8                        65,792
+├─MLP (mlp_head): 1-4                              --
+│    └─ReLU (activation): 2-4                      --
+│    └─ReLU (out_activation): 2-5                  --
+│    └─ModuleList (layers): 2-6                    --
+│    │    └─Linear (0): 3-9                        36,352
+│    │    └─Linear (1): 3-10                       16,512
+├─DensityFieldHead (field_output_density): 1-5     --
+│    └─Softplus (activation): 2-7                  --
+│    └─Linear (net): 2-8                           257
+├─ModuleList (field_heads): 1-6                    --
+│    └─RGBFieldHead (0): 2-9                       --
+│    │    └─Sigmoid (activation): 3-11             --
+│    │    └─Linear (net): 3-12                     387
+==================================================================
+Total params: 546,564
+Trainable params: 546,564
+Non-trainable params: 0
+==================================================================</code></pre>
+</div>
+</div>
+</section>
+<section id="initial-blockspecs-to-generate-vanilla-nerf-architecture" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="initial-blockspecs-to-generate-vanilla-nerf-architecture"><span class="header-section-number">5.3</span> Initial BlockSpecs to generate Vanilla NeRF architecture</h2>
+<div class="cell" data-execution_count="30">
+<details>
+<summary>BlockSpecs for creating an MLP Base for <code>GenNerf</code> that matches NerfStudio’s <code>VanillaNerf</code> implementation</summary>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1"></a>mlp_blocks_searcher: MLPBlocksSearcher <span class="op">=</span> MLPBlocksSearcherConfig().setup(</span>
+<span id="cb46-2"><a href="#cb46-2"></a>    input_shape<span class="op">=</span>[<span class="dv">63</span>],</span>
+<span id="cb46-3"><a href="#cb46-3"></a>    in_dim<span class="op">=</span><span class="dv">63</span>,</span>
+<span id="cb46-4"><a href="#cb46-4"></a>    out_activation<span class="op">=</span>nn.ReLU(),</span>
+<span id="cb46-5"><a href="#cb46-5"></a>)</span>
+<span id="cb46-6"><a href="#cb46-6"></a>initial_blockspecs_to_reproduce_vanilla: MLPBlockSpecsConfig <span class="op">=</span> (</span>
+<span id="cb46-7"><a href="#cb46-7"></a>    mlp_blocks_searcher.get_blockspecs_config(BaseMLPArchStyle.VANILLA)</span>
+<span id="cb46-8"><a href="#cb46-8"></a>)</span>
+<span id="cb46-9"><a href="#cb46-9"></a><span class="bu">print</span>(initial_blockspecs_to_reproduce_vanilla)</span>
+<span id="cb46-10"><a href="#cb46-10"></a></span>
+<span id="cb46-11"><a href="#cb46-11"></a>base_mlp_to_reproduce_vanilla <span class="op">=</span> mlp_blocks_searcher.generate_model(</span>
+<span id="cb46-12"><a href="#cb46-12"></a>    initial_blockspecs_to_reproduce_vanilla.setup()</span>
+<span id="cb46-13"><a href="#cb46-13"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>MLPBlockSpecsConfig:
+    _target: &lt;class 'gen_nerf.modules.mlp.MLPBlockSpecs'&gt;
+    stage1: BlockSpecConfig(_target=&lt;class 'darwinai.torch.builder.BlockSpec'&gt;, channels=256, depth=4, freeze_channel=False, freeze_depth=False)
+    stage2: BlockSpecConfig(_target=&lt;class 'darwinai.torch.builder.BlockSpec'&gt;, channels=256, depth=1, freeze_channel=False, freeze_depth=True)
+    stage3: BlockSpecConfig(_target=&lt;class 'darwinai.torch.builder.BlockSpec'&gt;, channels=256, depth=3, freeze_channel=False, freeze_depth=False)</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="31">
+<details>
+<summary>Test case demonstrating that the blockspecs registered to <code>MLPBlocksSearcher</code> for <code>BaseMLPArchStyle.VANILLA</code> match NerfStudio’s <code>VanillaNerf</code> MLP Base architecture</summary>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1"></a>test_module_lists_equal(</span>
+<span id="cb48-2"><a href="#cb48-2"></a>    base_mlp_to_reproduce_vanilla.layers, vanilla_nerf.field_coarse.mlp_base.layers</span>
+<span id="cb48-3"><a href="#cb48-3"></a>)</span>
+<span id="cb48-4"><a href="#cb48-4"></a><span class="bu">print</span>(<span class="ss">f"GenNerf MLP Base matches VanillaNerf MLP Base!"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>GenNerf MLP Base matches VanillaNerf MLP Base!</code></pre>
+</div>
+</div>
+</section>
+<section id="modifying-target-ratio-for-initial-blockspecs" class="level2" data-number="5.4">
+<h2 data-number="5.4" class="anchored" data-anchor-id="modifying-target-ratio-for-initial-blockspecs"><span class="header-section-number">5.4</span> Modifying Target Ratio for Initial Blockspecs</h2>
+<section id="validating-that-target-ratio-of-1.0-results-in-identical-architecture-to-vanillanerf-base-mlp" class="level3" data-number="5.4.1">
+<h3 data-number="5.4.1" class="anchored" data-anchor-id="validating-that-target-ratio-of-1.0-results-in-identical-architecture-to-vanillanerf-base-mlp"><span class="header-section-number">5.4.1</span> Validating that target ratio of 1.0 results in identical architecture to <code>VanillaNeRF</code> Base MLP</h3>
+<div class="cell" data-execution_count="44">
+<details>
+<summary>BlockSpecs for creating an MLP Base with target flops ratio of 1</summary>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1"></a>mlp_blocks_searcher_cfg <span class="op">=</span> MLPBlocksSearcherConfig(</span>
+<span id="cb50-2"><a href="#cb50-2"></a>    target_ratio<span class="op">=</span><span class="fl">1.0</span>, arch_style<span class="op">=</span>BaseMLPArchStyle.LARGE_UNIFORM</span>
+<span id="cb50-3"><a href="#cb50-3"></a>)</span>
+<span id="cb50-4"><a href="#cb50-4"></a>mlp_blocks_searcher: MLPBlocksSearcher <span class="op">=</span> mlp_blocks_searcher_cfg.setup(</span>
+<span id="cb50-5"><a href="#cb50-5"></a>    input_shape<span class="op">=</span>[<span class="dv">63</span>],</span>
+<span id="cb50-6"><a href="#cb50-6"></a>    in_dim<span class="op">=</span><span class="dv">63</span>,</span>
+<span id="cb50-7"><a href="#cb50-7"></a>    out_activation<span class="op">=</span>nn.ReLU(),</span>
+<span id="cb50-8"><a href="#cb50-8"></a>)</span>
+<span id="cb50-9"><a href="#cb50-9"></a>generated_model <span class="op">=</span> mlp_blocks_searcher.generated_model</span>
+<span id="cb50-10"><a href="#cb50-10"></a>test_module_lists_equal(</span>
+<span id="cb50-11"><a href="#cb50-11"></a>    generated_model.layers, vanilla_nerf.field_coarse.mlp_base.layers</span>
+<span id="cb50-12"><a href="#cb50-12"></a>)</span>
+<span id="cb50-13"><a href="#cb50-13"></a></span>
+<span id="cb50-14"><a href="#cb50-14"></a></span>
+<span id="cb50-15"><a href="#cb50-15"></a>loggable_dict <span class="op">=</span> mlp_blocks_searcher.loggable_dict</span>
+<span id="cb50-16"><a href="#cb50-16"></a><span class="co"># initial_blockspecs_to_reproduce_vanilla: MLPBlockSpecsConfig = (</span></span>
+<span id="cb50-17"><a href="#cb50-17"></a><span class="co">#     mlp_blocks_searcher.get_blockspecs_config(BaseMLPArchStyle.VANILLA)</span></span>
+<span id="cb50-18"><a href="#cb50-18"></a><span class="co"># )</span></span>
+<span id="cb50-19"><a href="#cb50-19"></a><span class="co"># print(initial_blockspecs_to_reproduce_vanilla)</span></span>
+<span id="cb50-20"><a href="#cb50-20"></a></span>
+<span id="cb50-21"><a href="#cb50-21"></a><span class="co"># base_mlp_to_reproduce_vanilla = mlp_blocks_searcher.generate_model(</span></span>
+<span id="cb50-22"><a href="#cb50-22"></a><span class="co">#     initial_blockspecs_to_reproduce_vanilla.setup()</span></span>
+<span id="cb50-23"><a href="#cb50-23"></a><span class="co"># )</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell" data-execution_count="45">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1"></a>baseline_flops <span class="op">=</span> get_flops(vanilla_nerf.field_coarse.mlp_base, input_shape)</span>
+<span id="cb51-2"><a href="#cb51-2"></a>baseline_params <span class="op">=</span> get_params(vanilla_nerf.field_coarse.mlp_base)</span>
+<span id="cb51-3"><a href="#cb51-3"></a></span>
+<span id="cb51-4"><a href="#cb51-4"></a>gen_nerf_base_mlp_flops <span class="op">=</span> get_flops(generated_model, input_shape)</span>
+<span id="cb51-5"><a href="#cb51-5"></a>gen_nerf_base_mlp_params <span class="op">=</span> get_params(generated_model)</span>
+<span id="cb51-6"><a href="#cb51-6"></a></span>
+<span id="cb51-7"><a href="#cb51-7"></a><span class="co"># Validate that GenNerf MLP Base matches VanillaNerf MLP Base flops and params</span></span>
+<span id="cb51-8"><a href="#cb51-8"></a><span class="cf">assert</span> (</span>
+<span id="cb51-9"><a href="#cb51-9"></a>    baseline_flops <span class="op">==</span> gen_nerf_base_mlp_flops</span>
+<span id="cb51-10"><a href="#cb51-10"></a>), <span class="ss">f"GenNerf MLP Base flops </span><span class="sc">{</span>gen_nerf_base_mlp_flops<span class="sc">}</span><span class="ss"> != VanillaNerf MLP Base flops </span><span class="sc">{</span>baseline_flops<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb51-11"><a href="#cb51-11"></a></span>
+<span id="cb51-12"><a href="#cb51-12"></a><span class="cf">assert</span> (</span>
+<span id="cb51-13"><a href="#cb51-13"></a>    baseline_params <span class="op">==</span> gen_nerf_base_mlp_params</span>
+<span id="cb51-14"><a href="#cb51-14"></a>), <span class="ss">f"GenNerf MLP Base params </span><span class="sc">{</span>gen_nerf_base_mlp_params<span class="sc">}</span><span class="ss"> != VanillaNerf MLP Base params </span><span class="sc">{</span>baseline_params<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb51-15"><a href="#cb51-15"></a></span>
+<span id="cb51-16"><a href="#cb51-16"></a><span class="bu">print</span>(<span class="ss">f"GenNerf MLP Base matches VanillaNerf MLP Base!"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>GenNerf MLP Base matches VanillaNerf MLP Base!</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="46">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1"></a>loggable_dict</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="46">
+<pre><code>{'generated': True,
+ 'target_ratio': 1.0,
+ 'build_metric': &lt;BuildMetrics.FLOPS: 1&gt;,
+ 'pretrained': False,
+ 'arch_style': &lt;BaseMLPArchStyle.LARGE_UNIFORM: 'LARGE_UNIFORM'&gt;,
+ 'generated_mlp': {'params': 493056,
+  'flops': 491008,
+  'attributes': {'stage1': {'channels': 256,
+    'depth': 4,
+    'freeze_depth': False,
+    'freeze_channels': False},
+   'stage2': {'channels': 256,
+    'depth': 1,
+    'freeze_depth': True,
+    'freeze_channels': False},
+   'stage3': {'channels': 256,
+    'depth': 3,
+    'freeze_depth': False,
+    'freeze_channels': False},
+   'skip_connections': [4]}},
+ 'baseline_vanilla_mlp': {'params': 493056,
+  'flops': 491008,
+  'attributes': {'stage1': {'channels': 256,
+    'depth': 4,
+    'freeze_depth': False,
+    'freeze_channels': False},
+   'stage2': {'channels': 256,
+    'depth': 1,
+    'freeze_depth': True,
+    'freeze_channels': False},
+   'stage3': {'channels': 256,
+    'depth': 3,
+    'freeze_depth': False,
+    'freeze_channels': False},
+   'skip_connections': [4]}},
+ 'flop_ratio_vs_baseline_vanilla': 1.0,
+ 'params_ratio_vs_baseline_vanilla': 1.0,
+ 'baseline_initial_mlp': {'params': 493056,
+  'flops': 491008,
+  'attributes': {'stage1': {'channels': 256,
+    'depth': 4,
+    'freeze_depth': False,
+    'freeze_channels': False},
+   'stage2': {'channels': 256,
+    'depth': 1,
+    'freeze_depth': True,
+    'freeze_channels': False},
+   'stage3': {'channels': 256,
+    'depth': 3,
+    'freeze_depth': False,
+    'freeze_channels': False},
+   'skip_connections': [4]}},
+ 'flop_ratio_vs_baseline_initial': 1.0,
+ 'params_ratio_vs_baseline_initial': 1.0}</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="33">
+<div class="cell-output cell-output-display">
+<div class="sourceCode" id="cb55"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1"></a><span class="kw">class</span> MLPBlockSpecs(BlockSpecs):</span>
+<span id="cb55-2"><a href="#cb55-2"></a>    <span class="co">"""A list of BlockSpecs for the MLPs in NeRF.</span></span>
+<span id="cb55-3"><a href="#cb55-3"></a><span class="co">    This class can be directly passed to `darwinai.torch.builder.build_model()` as</span></span>
+<span id="cb55-4"><a href="#cb55-4"></a><span class="co">    it satisfies the requirement of being a `Sequence[BlockSpec]`.</span></span>
+<span id="cb55-5"><a href="#cb55-5"></a></span>
+<span id="cb55-6"><a href="#cb55-6"></a><span class="co">    Args:</span></span>
+<span id="cb55-7"><a href="#cb55-7"></a><span class="co">        stage1: First stage of the base MLP in a NeRF Field.</span></span>
+<span id="cb55-8"><a href="#cb55-8"></a><span class="co">        stage2: Second stage of the base MLP in a NeRF Field.</span></span>
+<span id="cb55-9"><a href="#cb55-9"></a><span class="co">        stage3: Third stage of the base MLP in a NeRF Field.</span></span>
+<span id="cb55-10"><a href="#cb55-10"></a></span>
+<span id="cb55-11"><a href="#cb55-11"></a><span class="co">    Raises:</span></span>
+<span id="cb55-12"><a href="#cb55-12"></a><span class="co">        ValueError: If any of the BlockSpecs are None.</span></span>
+<span id="cb55-13"><a href="#cb55-13"></a><span class="co">    """</span></span>
+<span id="cb55-14"><a href="#cb55-14"></a></span>
+<span id="cb55-15"><a href="#cb55-15"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, stage1: BlockSpec, stage2: BlockSpec, stage3: BlockSpec):</span>
+<span id="cb55-16"><a href="#cb55-16"></a>        <span class="cf">if</span> stage1 <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="kw">and</span> stage2 <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="kw">and</span> stage3 <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb55-17"><a href="#cb55-17"></a>            <span class="bu">super</span>().<span class="fu">__init__</span>([stage1, stage2, stage3])</span>
+<span id="cb55-18"><a href="#cb55-18"></a>        <span class="cf">else</span>:</span>
+<span id="cb55-19"><a href="#cb55-19"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"BlockSpec for stage 1, 2, or 3 cannot be None."</span>)</span>
+<span id="cb55-20"><a href="#cb55-20"></a></span>
+<span id="cb55-21"><a href="#cb55-21"></a>    <span class="at">@property</span></span>
+<span id="cb55-22"><a href="#cb55-22"></a>    <span class="kw">def</span> stage1(<span class="va">self</span>):</span>
+<span id="cb55-23"><a href="#cb55-23"></a>        <span class="cf">return</span> <span class="va">self</span>[<span class="dv">0</span>]</span>
+<span id="cb55-24"><a href="#cb55-24"></a></span>
+<span id="cb55-25"><a href="#cb55-25"></a>    <span class="at">@property</span></span>
+<span id="cb55-26"><a href="#cb55-26"></a>    <span class="kw">def</span> stage2(<span class="va">self</span>):</span>
+<span id="cb55-27"><a href="#cb55-27"></a>        <span class="cf">return</span> <span class="va">self</span>[<span class="dv">1</span>]</span>
+<span id="cb55-28"><a href="#cb55-28"></a></span>
+<span id="cb55-29"><a href="#cb55-29"></a>    <span class="at">@property</span></span>
+<span id="cb55-30"><a href="#cb55-30"></a>    <span class="kw">def</span> stage3(<span class="va">self</span>):</span>
+<span id="cb55-31"><a href="#cb55-31"></a>        <span class="cf">return</span> <span class="va">self</span>[<span class="dv">2</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+<div class="cell" data-execution_count="34">
+<div class="cell-output cell-output-display">
+<div class="sourceCode" id="cb56"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1"></a><span class="kw">class</span> BlockSpecs(UserList[BlockSpec]):</span>
+<span id="cb56-2"><a href="#cb56-2"></a>    <span class="co">"""A pure wrapper around a list of BlockSpec objects.</span></span>
+<span id="cb56-3"><a href="#cb56-3"></a></span>
+<span id="cb56-4"><a href="#cb56-4"></a><span class="co">    This class satisfies the `Sequence[BlockSpec]` bound for `TBlockSpecs`,</span></span>
+<span id="cb56-5"><a href="#cb56-5"></a><span class="co">    so it can be passed to `darwinai.torch.builder.build_model()`. All architectures</span></span>
+<span id="cb56-6"><a href="#cb56-6"></a><span class="co">    that can be dynamically generated based on BlockSpec configurations should</span></span>
+<span id="cb56-7"><a href="#cb56-7"></a><span class="co">    subclass this class.</span></span>
+<span id="cb56-8"><a href="#cb56-8"></a></span>
+<span id="cb56-9"><a href="#cb56-9"></a><span class="co">    The constructor for this class is flexible. It can be passed a single sequence</span></span>
+<span id="cb56-10"><a href="#cb56-10"></a><span class="co">    of BlockSpec objects (such as a list or tuple), like this:</span></span>
+<span id="cb56-11"><a href="#cb56-11"></a></span>
+<span id="cb56-12"><a href="#cb56-12"></a><span class="co">        BlockSpecs([stage1, stage2, stage3])</span></span>
+<span id="cb56-13"><a href="#cb56-13"></a></span>
+<span id="cb56-14"><a href="#cb56-14"></a><span class="co">    Alternatively, it can be passed one or more BlockSpec objects directly, like this:</span></span>
+<span id="cb56-15"><a href="#cb56-15"></a></span>
+<span id="cb56-16"><a href="#cb56-16"></a><span class="co">        BlockSpecs(stage1, stage2, stage3)</span></span>
+<span id="cb56-17"><a href="#cb56-17"></a></span>
+<span id="cb56-18"><a href="#cb56-18"></a><span class="co">    In the latter case, the BlockSpec arguments are collected into a list in the</span></span>
+<span id="cb56-19"><a href="#cb56-19"></a><span class="co">    order they were passed.</span></span>
+<span id="cb56-20"><a href="#cb56-20"></a></span>
+<span id="cb56-21"><a href="#cb56-21"></a><span class="co">    Args:</span></span>
+<span id="cb56-22"><a href="#cb56-22"></a><span class="co">        blockspecs: One or more BlockSpec objects, or a single sequence of BlockSpec objects.</span></span>
+<span id="cb56-23"><a href="#cb56-23"></a><span class="co">    """</span></span>
+<span id="cb56-24"><a href="#cb56-24"></a></span>
+<span id="cb56-25"><a href="#cb56-25"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, <span class="op">*</span>blockspecs: Union[BlockSpec, Sequence[BlockSpec]]):</span>
+<span id="cb56-26"><a href="#cb56-26"></a>        flat_blockspecs: List[BlockSpec] <span class="op">=</span> []</span>
+<span id="cb56-27"><a href="#cb56-27"></a>        <span class="cf">for</span> item <span class="kw">in</span> blockspecs:</span>
+<span id="cb56-28"><a href="#cb56-28"></a>            <span class="cf">if</span> <span class="bu">isinstance</span>(item, Sequence):</span>
+<span id="cb56-29"><a href="#cb56-29"></a>                flat_blockspecs.extend(item)</span>
+<span id="cb56-30"><a href="#cb56-30"></a>            <span class="cf">else</span>:</span>
+<span id="cb56-31"><a href="#cb56-31"></a>                flat_blockspecs.append(item)</span>
+<span id="cb56-32"><a href="#cb56-32"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(flat_blockspecs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+<div class="cell" data-execution_count="35">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1"></a>show_doc(MLPBlockSpecs, title_level<span class="op">=</span><span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="35">
+<hr>
+<section id="mlpblockspecs" class="level3" data-number="5.4.2">
+<h3 data-number="5.4.2" class="anchored" data-anchor-id="mlpblockspecs"><span class="header-section-number">5.4.2</span> MLPBlockSpecs</h3>
+<blockquote class="blockquote">
+<pre><code> MLPBlockSpecs (stage1:darwinai.torch.builder.BlockSpec,
+                stage2:darwinai.torch.builder.BlockSpec,
+                stage3:darwinai.torch.builder.BlockSpec)</code></pre>
+</blockquote>
+<p>A list of BlockSpecs for the MLPs in NeRF. This class can be directly passed to <code>darwinai.torch.builder.build_model()</code> as it satisfies the requirement of being a <code>Sequence[BlockSpec]</code>.</p>
+<p>Args: stage1: First stage of the base MLP in a NeRF Field. stage2: Second stage of the base MLP in a NeRF Field. stage3: Third stage of the base MLP in a NeRF Field.</p>
+<p>Raises: ValueError: If any of the BlockSpecs are None.</p>
+</section>
+</div>
+</div>
+<div class="cell" data-execution_count="36">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1"></a>show_doc(BlockSpecs, title_level<span class="op">=</span><span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="36">
+<hr>
+<section id="blockspecs" class="level3" data-number="5.4.3">
+<h3 data-number="5.4.3" class="anchored" data-anchor-id="blockspecs"><span class="header-section-number">5.4.3</span> BlockSpecs</h3>
+<blockquote class="blockquote">
+<pre><code> BlockSpecs (*blockspecs:Union[darwinai.torch.builder.BlockSpec,Sequence[d
+             arwinai.torch.builder.BlockSpec]])</code></pre>
+</blockquote>
+<p>A pure wrapper around a list of BlockSpec objects.</p>
+<p>This class satisfies the <code>Sequence[BlockSpec]</code> bound for <code>TBlockSpecs</code>, so it can be passed to <code>darwinai.torch.builder.build_model()</code>. All architectures that can be dynamically generated based on BlockSpec configurations should subclass this class.</p>
+<p>The constructor for this class is flexible. It can be passed a single sequence of BlockSpec objects (such as a list or tuple), like this:</p>
+<pre><code>BlockSpecs([stage1, stage2, stage3])</code></pre>
+<p>Alternatively, it can be passed one or more BlockSpec objects directly, like this:</p>
+<pre><code>BlockSpecs(stage1, stage2, stage3)</code></pre>
+<p>In the latter case, the BlockSpec arguments are collected into a list in the order they were passed.</p>
+<p>Args: blockspecs: One or more BlockSpec objects, or a single sequence of BlockSpec objects.</p>
+</section>
+</div>
+</div>
+</section>
+</section>
+<section id="generate-the-blockspecs-produced-by-darwinai-sdk-for-the-w23nerf-model" class="level2" data-number="5.5">
+<h2 data-number="5.5" class="anchored" data-anchor-id="generate-the-blockspecs-produced-by-darwinai-sdk-for-the-w23nerf-model"><span class="header-section-number">5.5</span> Generate the BlockSpecs produced by DarwinAI SDK for the W23NeRF model</h2>
+<div class="cell" data-execution_count="37">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1"></a><span class="kw">def</span> get_darwin_params(make_model_fn, ratio, initial_blockspec, input_shape<span class="op">=</span>[<span class="dv">63</span> <span class="op">+</span> <span class="dv">27</span>]):</span>
+<span id="cb63-2"><a href="#cb63-2"></a>    <span class="co"># Darwin Builder</span></span>
+<span id="cb63-3"><a href="#cb63-3"></a>    target_flops_ratio <span class="op">=</span> ratio</span>
+<span id="cb63-4"><a href="#cb63-4"></a></span>
+<span id="cb63-5"><a href="#cb63-5"></a>    model <span class="op">=</span> build_model(</span>
+<span id="cb63-6"><a href="#cb63-6"></a>        make_model_fn,</span>
+<span id="cb63-7"><a href="#cb63-7"></a>        initial_blockspec,</span>
+<span id="cb63-8"><a href="#cb63-8"></a>        input_shape,</span>
+<span id="cb63-9"><a href="#cb63-9"></a>        target_flops_ratio,</span>
+<span id="cb63-10"><a href="#cb63-10"></a>        pretrained_model<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb63-11"><a href="#cb63-11"></a>    )</span>
+<span id="cb63-12"><a href="#cb63-12"></a></span>
+<span id="cb63-13"><a href="#cb63-13"></a>    <span class="cf">return</span> model, model.Ws, model.D</span>
+<span id="cb63-14"><a href="#cb63-14"></a></span>
+<span id="cb63-15"><a href="#cb63-15"></a></span>
+<span id="cb63-16"><a href="#cb63-16"></a><span class="kw">def</span> test_flop_ratios_w23(</span>
+<span id="cb63-17"><a href="#cb63-17"></a>    initial_blockspec,</span>
+<span id="cb63-18"><a href="#cb63-18"></a>    flop_ratios<span class="op">=</span>[<span class="fl">1.0</span>, <span class="fl">0.9</span>, <span class="fl">0.8</span>, <span class="fl">0.7</span>, <span class="fl">0.6</span>, <span class="fl">0.5</span>, <span class="fl">0.4</span>, <span class="fl">0.3</span>, <span class="fl">0.2</span>, <span class="fl">0.1</span>, <span class="fl">0.05</span>],</span>
+<span id="cb63-19"><a href="#cb63-19"></a>):</span>
+<span id="cb63-20"><a href="#cb63-20"></a>    initial_blockspec_str <span class="op">=</span> [(bs.channels, bs.depth) <span class="cf">for</span> bs <span class="kw">in</span> initial_blockspec]</span>
+<span id="cb63-21"><a href="#cb63-21"></a></span>
+<span id="cb63-22"><a href="#cb63-22"></a>    input_shape <span class="op">=</span> [<span class="dv">63</span> <span class="op">+</span> <span class="dv">27</span>]</span>
+<span id="cb63-23"><a href="#cb63-23"></a></span>
+<span id="cb63-24"><a href="#cb63-24"></a>    <span class="cf">if</span> <span class="bu">len</span>(<span class="bu">set</span>([bs.channels <span class="cf">for</span> bs <span class="kw">in</span> initial_blockspec])) <span class="op">==</span> <span class="dv">1</span>:</span>
+<span id="cb63-25"><a href="#cb63-25"></a>        <span class="bu">print</span>(</span>
+<span id="cb63-26"><a href="#cb63-26"></a>            <span class="ss">f"Initializing each stage to have the same layer width for model type W23NeRF."</span></span>
+<span id="cb63-27"><a href="#cb63-27"></a>        )</span>
+<span id="cb63-28"><a href="#cb63-28"></a>    <span class="cf">else</span>:</span>
+<span id="cb63-29"><a href="#cb63-29"></a>        <span class="bu">print</span>(</span>
+<span id="cb63-30"><a href="#cb63-30"></a>            <span class="ss">f"Initializing each stage to have different layer widths for model type W23NeRF"</span></span>
+<span id="cb63-31"><a href="#cb63-31"></a>        )</span>
+<span id="cb63-32"><a href="#cb63-32"></a></span>
+<span id="cb63-33"><a href="#cb63-33"></a>    baseline_model <span class="op">=</span> make_model_w23(initial_blockspec)</span>
+<span id="cb63-34"><a href="#cb63-34"></a>    baseline_flops <span class="op">=</span> get_flops(baseline_model, input_shape)</span>
+<span id="cb63-35"><a href="#cb63-35"></a>    baseline_params <span class="op">=</span> get_params(baseline_model)</span>
+<span id="cb63-36"><a href="#cb63-36"></a>    <span class="bu">print</span>(</span>
+<span id="cb63-37"><a href="#cb63-37"></a>        <span class="ss">f"Using initial blockspecs (List[BlockSpec(channel, depth)]): </span><span class="ch">\n\t</span><span class="sc">{</span>initial_blockspec_str<span class="sc">}</span><span class="ss">."</span></span>
+<span id="cb63-38"><a href="#cb63-38"></a>    )</span>
+<span id="cb63-39"><a href="#cb63-39"></a></span>
+<span id="cb63-40"><a href="#cb63-40"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Target FR'</span><span class="sc">:&lt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Actual FR'</span><span class="sc">:&lt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Actual PR'</span><span class="sc">:&lt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Ws'</span><span class="sc">:&lt;20}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'D'</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb63-41"><a href="#cb63-41"></a>    <span class="cf">for</span> fr <span class="kw">in</span> flop_ratios:</span>
+<span id="cb63-42"><a href="#cb63-42"></a>        model <span class="op">=</span> build_model(</span>
+<span id="cb63-43"><a href="#cb63-43"></a>            make_model_w23,</span>
+<span id="cb63-44"><a href="#cb63-44"></a>            initial_blockspec,</span>
+<span id="cb63-45"><a href="#cb63-45"></a>            input_shape,</span>
+<span id="cb63-46"><a href="#cb63-46"></a>            fr,</span>
+<span id="cb63-47"><a href="#cb63-47"></a>            pretrained_model<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb63-48"><a href="#cb63-48"></a>        )</span>
+<span id="cb63-49"><a href="#cb63-49"></a>        new_flops <span class="op">=</span> get_flops(model, input_shape)</span>
+<span id="cb63-50"><a href="#cb63-50"></a>        new_params <span class="op">=</span> get_params(model)</span>
+<span id="cb63-51"><a href="#cb63-51"></a>        Ws_string <span class="op">=</span> <span class="bu">tuple</span>(model.Ws[:<span class="dv">3</span>])</span>
+<span id="cb63-52"><a href="#cb63-52"></a></span>
+<span id="cb63-53"><a href="#cb63-53"></a>        <span class="co"># Compute new flop ratio and params ratio.</span></span>
+<span id="cb63-54"><a href="#cb63-54"></a>        flops_ratio <span class="op">=</span> new_flops <span class="op">/</span> baseline_flops</span>
+<span id="cb63-55"><a href="#cb63-55"></a>        params_ratio <span class="op">=</span> new_params <span class="op">/</span> baseline_params</span>
+<span id="cb63-56"><a href="#cb63-56"></a></span>
+<span id="cb63-57"><a href="#cb63-57"></a>        <span class="bu">print</span>(</span>
+<span id="cb63-58"><a href="#cb63-58"></a>            <span class="ss">f"</span><span class="sc">{</span>fr<span class="sc">:&lt;10.2f}</span><span class="ss"> </span><span class="sc">{</span>flops_ratio<span class="sc">:&lt;10.2f}</span><span class="ss"> </span><span class="sc">{</span>params_ratio<span class="sc">:&lt;10.2f}</span><span class="ss"> </span><span class="sc">{</span><span class="bu">str</span>(Ws_string)<span class="sc">:&lt;20}</span><span class="ss"> </span><span class="sc">{</span>model<span class="sc">.</span>D<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb63-59"><a href="#cb63-59"></a>        )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="blockspecs-generated-by-buildsdk-for-the-eddy-vanilla-nerf-with-default256" class="level3" data-number="5.5.1">
+<h3 data-number="5.5.1" class="anchored" data-anchor-id="blockspecs-generated-by-buildsdk-for-the-eddy-vanilla-nerf-with-default256"><span class="header-section-number">5.5.1</span> BlockSpecs generated by BuildSDK for the Eddy Vanilla NeRF with default=256</h3>
+<div class="cell" data-execution_count="38">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1"></a>default <span class="op">=</span> <span class="dv">256</span></span>
+<span id="cb64-2"><a href="#cb64-2"></a></span>
+<span id="cb64-3"><a href="#cb64-3"></a><span class="co"># Same initial widths.</span></span>
+<span id="cb64-4"><a href="#cb64-4"></a>initial_blockspec <span class="op">=</span> [</span>
+<span id="cb64-5"><a href="#cb64-5"></a>    BlockSpec(default, <span class="dv">8</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb64-6"><a href="#cb64-6"></a>    BlockSpec(default, <span class="dv">8</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb64-7"><a href="#cb64-7"></a>    BlockSpec(default, <span class="dv">8</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb64-8"><a href="#cb64-8"></a>]</span>
+<span id="cb64-9"><a href="#cb64-9"></a>test_flop_ratios_w23(initial_blockspec)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Initializing each stage to have the same layer width for model type W23NeRF.
+Using initial blockspecs (List[BlockSpec(channel, depth)]): 
+    [(256, 8), (256, 8), (256, 8)].
+Target FR  Actual FR  Actual PR  Ws                   D
+1.00       1.00       1.00       (256, 256, 256)      8
+0.90       0.87       0.87       (253, 253, 253)      7
+0.80       0.82       0.82       (245, 245, 245)      7
+0.70       0.73       0.73       (231, 231, 231)      7
+0.60       0.60       0.60       (224, 224, 224)      6
+0.50       0.52       0.52       (208, 208, 208)      6
+0.40       0.38       0.38       (191, 191, 191)      5
+0.30       0.28       0.28       (177, 177, 177)      4
+0.20       0.20       0.20       (149, 149, 149)      4
+0.10       0.10       0.10       (102, 102, 102)      4
+0.05       0.05       0.05       (65, 65, 65)         4</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="39">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1"></a><span class="co"># Different initial widths.</span></span>
+<span id="cb66-2"><a href="#cb66-2"></a>initial_blockspec <span class="op">=</span> [</span>
+<span id="cb66-3"><a href="#cb66-3"></a>    BlockSpec(<span class="dv">240</span>, <span class="dv">8</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb66-4"><a href="#cb66-4"></a>    BlockSpec(<span class="dv">248</span>, <span class="dv">8</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb66-5"><a href="#cb66-5"></a>    BlockSpec(<span class="dv">256</span>, <span class="dv">8</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb66-6"><a href="#cb66-6"></a>]</span>
+<span id="cb66-7"><a href="#cb66-7"></a>test_flop_ratios(initial_blockspec, <span class="st">"w23"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-error">
+<pre><code>NameError: name 'test_flop_ratios' is not defined</code></pre>
+</div>
+</div>
+</section>
+<section id="blockspecs-generated-by-buildsdk-for-the-eddy-vanilla-nerf-with-default64" class="level3" data-number="5.5.2">
+<h3 data-number="5.5.2" class="anchored" data-anchor-id="blockspecs-generated-by-buildsdk-for-the-eddy-vanilla-nerf-with-default64"><span class="header-section-number">5.5.2</span> BlockSpecs generated by BuildSDK for the Eddy Vanilla NeRF with default=64</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1"></a>default <span class="op">=</span> <span class="dv">64</span></span>
+<span id="cb68-2"><a href="#cb68-2"></a></span>
+<span id="cb68-3"><a href="#cb68-3"></a><span class="co"># Same initial widths.</span></span>
+<span id="cb68-4"><a href="#cb68-4"></a>initial_blockspec <span class="op">=</span> [</span>
+<span id="cb68-5"><a href="#cb68-5"></a>    BlockSpec(default, <span class="dv">8</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb68-6"><a href="#cb68-6"></a>    BlockSpec(default, <span class="dv">8</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb68-7"><a href="#cb68-7"></a>    BlockSpec(default, <span class="dv">8</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb68-8"><a href="#cb68-8"></a>]</span>
+<span id="cb68-9"><a href="#cb68-9"></a>test_flop_ratios(initial_blockspec, <span class="st">"w23"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Initializing each stage to have the same layer width for model type eddy.
+Using initial blockspecs (List[BlockSpec(channel, depth)]): 
+    [(64, 8), (64, 8), (64, 8)].
+Target FR  Actual FR  Actual PR  Ws                   D
+1.00       1.00       1.00       (64, 64, 64)         8
+0.90       0.86       0.86       (62, 62, 62)         7
+0.80       0.76       0.76       (58, 58, 58)         7
+0.70       0.66       0.66       (57, 57, 57)         6
+0.60       0.59       0.59       (53, 53, 53)         6
+0.50       0.49       0.49       (51, 51, 51)         5
+0.40       0.40       0.40       (45, 45, 45)         5
+0.30       0.29       0.29       (40, 40, 40)         4
+0.20       0.21       0.21       (32, 32, 32)         4
+0.10       0.10       0.10       (19, 19, 19)         4
+0.05       0.06       0.06       (12, 12, 12)         5</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb70-1"><a href="#cb70-1"></a><span class="co"># Different initial widths.</span></span>
+<span id="cb70-2"><a href="#cb70-2"></a>initial_blockspec <span class="op">=</span> [</span>
+<span id="cb70-3"><a href="#cb70-3"></a>    BlockSpec(<span class="dv">56</span>, <span class="dv">4</span>, <span class="va">False</span>, <span class="va">True</span>),</span>
+<span id="cb70-4"><a href="#cb70-4"></a>    BlockSpec(<span class="dv">60</span>, <span class="dv">4</span>, <span class="va">False</span>, <span class="va">True</span>),</span>
+<span id="cb70-5"><a href="#cb70-5"></a>    BlockSpec(<span class="dv">64</span>, <span class="dv">6</span>, <span class="va">False</span>, <span class="va">False</span>),</span>
+<span id="cb70-6"><a href="#cb70-6"></a>]</span>
+<span id="cb70-7"><a href="#cb70-7"></a>test_flop_ratios(initial_blockspec, <span class="st">"w23"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Initializing each stage to have different layer widths for model type eddy
+Using initial blockspecs (List[BlockSpec(channel, depth)]): 
+    [(56, 4), (60, 4), (64, 6)].
+Target FR  Actual FR  Actual PR  Ws                   D
+1.00       1.00       1.00       (56, 60, 64)         6
+0.90       0.88       0.88       (55, 59, 63)         5
+0.80       0.77       0.77       (51, 55, 58)         5
+0.70       0.71       0.71       (48, 52, 56)         5
+0.60       0.59       0.59       (47, 51, 54)         4
+0.50       0.52       0.52       (44, 47, 50)         4
+0.40       0.38       0.38       (38, 41, 45)         3
+0.30       0.31       0.31       (33, 36, 39)         3
+0.20       0.20       0.20       (24, 26, 29)         3
+0.10       0.10       0.10       (14, 16, 18)         3
+0.05       0.06       0.06       (9, 11, 12)          3</code></pre>
+</div>
+</div>
+</section>
+<section id="blockspecs-generated-by-buildsdk-for-the-vanilla-gennerf-with-default256" class="level3" data-number="5.5.3">
+<h3 data-number="5.5.3" class="anchored" data-anchor-id="blockspecs-generated-by-buildsdk-for-the-vanilla-gennerf-with-default256"><span class="header-section-number">5.5.3</span> BlockSpecs generated by BuildSDK for the Vanilla GenNeRF with default=256</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb72-1"><a href="#cb72-1"></a><span class="co"># Same initial widths.</span></span>
+<span id="cb72-2"><a href="#cb72-2"></a>stage1 <span class="op">=</span> BlockSpec(<span class="dv">256</span>, <span class="dv">4</span>, <span class="va">False</span>, <span class="va">False</span>)</span>
+<span id="cb72-3"><a href="#cb72-3"></a>stage2 <span class="op">=</span> BlockSpec(<span class="dv">256</span>, <span class="dv">1</span>, <span class="va">False</span>, <span class="va">False</span>)</span>
+<span id="cb72-4"><a href="#cb72-4"></a>stage3 <span class="op">=</span> BlockSpec(<span class="dv">256</span>, <span class="dv">3</span>, <span class="va">False</span>, <span class="va">False</span>)</span>
+<span id="cb72-5"><a href="#cb72-5"></a></span>
+<span id="cb72-6"><a href="#cb72-6"></a>initial_blockspec <span class="op">=</span> GenNerfBaseMLPBlocks(stage1, stage2, stage3)</span>
+<span id="cb72-7"><a href="#cb72-7"></a>test_flop_ratios(initial_blockspec, <span class="st">"gen_nerf"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Initializing each stage to have the same layer width for model type gen_nerf.
+Using initial blockspecs (List[BlockSpec(channel, depth)]): 
+    [(256, 4), (256, 1), (256, 3)].
+Target FR  Actual FR  Actual PR  Ws                   D
+1.00       1.00       1.00       (256, 256, 256)      [4, 1, 3]
+0.90       0.73       0.73       (255, 255, 255)      [3, 1, 2]
+0.80       0.73       0.73       (255, 255, 255)      [3, 1, 2]
+0.70       0.67       0.67       (245, 245, 245)      [3, 1, 2]
+0.60       0.62       0.62       (235, 235, 235)      [3, 1, 2]
+0.50       0.52       0.52       (214, 214, 214)      [3, 1, 2]
+0.40       0.39       0.39       (203, 203, 203)      [2, 1, 2]
+0.30       0.33       0.33       (186, 186, 186)      [2, 1, 2]
+0.20       0.20       0.20       (162, 162, 162)      [2, 1, 1]
+0.10       0.10       0.10       (109, 109, 109)      [2, 1, 1]
+0.05       0.05       0.05       (74, 74, 74)         [2, 1, 1]</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb74-1"><a href="#cb74-1"></a><span class="co"># Different initial widths.</span></span>
+<span id="cb74-2"><a href="#cb74-2"></a>stage1 <span class="op">=</span> BlockSpec(<span class="dv">240</span>, <span class="dv">4</span>, <span class="va">False</span>, <span class="va">False</span>)</span>
+<span id="cb74-3"><a href="#cb74-3"></a>stage2 <span class="op">=</span> BlockSpec(<span class="dv">248</span>, <span class="dv">1</span>, <span class="va">False</span>, <span class="va">False</span>)</span>
+<span id="cb74-4"><a href="#cb74-4"></a>stage3 <span class="op">=</span> BlockSpec(<span class="dv">256</span>, <span class="dv">3</span>, <span class="va">False</span>, <span class="va">False</span>)</span>
+<span id="cb74-5"><a href="#cb74-5"></a></span>
+<span id="cb74-6"><a href="#cb74-6"></a>initial_blockspec <span class="op">=</span> GenNerfBaseMLPBlocks(stage1, stage2, stage3)</span>
+<span id="cb74-7"><a href="#cb74-7"></a>test_flop_ratios(initial_blockspec, <span class="st">"gen_nerf"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Initializing each stage to have different layer widths for model type gen_nerf
+Using initial blockspecs (List[BlockSpec(channel, depth)]): 
+    [(240, 4), (248, 1), (256, 3)].
+Target FR  Actual FR  Actual PR  Ws                   D
+1.00       1.00       1.00       (240, 248, 256)      [4, 1, 3]
+0.90       0.73       0.73       (239, 247, 255)      [3, 1, 2]
+0.80       0.73       0.73       (239, 247, 255)      [3, 1, 2]
+0.70       0.68       0.68       (230, 238, 245)      [3, 1, 2]
+0.60       0.62       0.62       (220, 227, 235)      [3, 1, 2]
+0.50       0.52       0.52       (200, 207, 214)      [3, 1, 2]
+0.40       0.39       0.40       (189, 196, 203)      [2, 1, 2]
+0.30       0.34       0.34       (174, 180, 186)      [2, 1, 2]
+0.20       0.20       0.20       (150, 156, 162)      [2, 1, 1]
+0.10       0.10       0.10       (100, 104, 109)      [2, 1, 1]
+0.05       0.05       0.05       (66, 70, 74)         [2, 1, 1]</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb76-1"><a href="#cb76-1"></a><span class="co"># Same initial widths.</span></span>
+<span id="cb76-2"><a href="#cb76-2"></a>stage1 <span class="op">=</span> BlockSpec(<span class="dv">240</span>, <span class="dv">4</span>, <span class="va">False</span>, <span class="va">False</span>)</span>
+<span id="cb76-3"><a href="#cb76-3"></a>stage2 <span class="op">=</span> BlockSpec(<span class="dv">248</span>, <span class="dv">1</span>, <span class="va">False</span>, <span class="va">True</span>)</span>
+<span id="cb76-4"><a href="#cb76-4"></a>stage3 <span class="op">=</span> BlockSpec(<span class="dv">256</span>, <span class="dv">3</span>, <span class="va">False</span>, <span class="va">False</span>)</span>
+<span id="cb76-5"><a href="#cb76-5"></a></span>
+<span id="cb76-6"><a href="#cb76-6"></a>initial_blockspec <span class="op">=</span> GenNerfBaseMLPBlocks(stage1, stage2, stage3)</span>
+<span id="cb76-7"><a href="#cb76-7"></a>test_flop_ratios(initial_blockspec, <span class="st">"gen_nerf"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Initializing each stage to have different layer widths for model type gen_nerf
+Using initial blockspecs (List[BlockSpec(channel, depth)]): 
+    [(240, 4), (248, 1), (256, 3)].
+Target FR  Actual FR  Actual PR  Ws                   D
+1.00       1.00       1.00       (240, 248, 256)      [4, 1, 3]
+0.90       0.73       0.73       (239, 247, 255)      [3, 1, 2]
+0.80       0.73       0.73       (239, 247, 255)      [3, 1, 2]
+0.70       0.68       0.68       (230, 238, 245)      [3, 1, 2]
+0.60       0.62       0.62       (220, 227, 235)      [3, 1, 2]
+0.50       0.52       0.52       (200, 207, 214)      [3, 1, 2]
+0.40       0.39       0.40       (189, 196, 203)      [2, 1, 2]
+0.30       0.34       0.34       (174, 180, 186)      [2, 1, 2]
+0.20       0.20       0.20       (150, 156, 162)      [2, 1, 1]
+0.10       0.10       0.10       (100, 104, 109)      [2, 1, 1]
+0.05       0.05       0.05       (66, 70, 74)         [2, 1, 1]</code></pre>
+</div>
+</div>
+
+
+</section>
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
