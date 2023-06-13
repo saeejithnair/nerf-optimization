@@ -1,0 +1,51 @@
+[
+  {
+    "objectID": "documentation/index.html",
+    "href": "documentation/index.html",
+    "title": "Documentation",
+    "section": "",
+    "text": "Documentation and walkthroughs explaining the design, motivation, and architecture."
+  },
+  {
+    "objectID": "experiments/exploration/Preliminary_Basic_Sweep.html",
+    "href": "experiments/exploration/Preliminary_Basic_Sweep.html",
+    "title": "Preliminary Basic Sweep",
+    "section": "",
+    "text": "This experiment trained and evaluated 100 Gen-Nerf models on the Blender Synthetic Lego scene. The search swept across 4 different configurations\n\nCoarse field initial blockspecs size (either layer widths of LARGE_VARIABLE: [240, 248, 256] or SMALL_VARIABLE: [56, 60, 64])\nFine field initial blockspecs size (either layer widths of LARGE_VARIABLE: [240, 248, 256] or SMALL_VARIABLE: [56, 60, 64])\nCoarse field target ratio argument to DarwinAI SDK (pipeline.model.coarse-field.base-mlp.target-ratio: [0.1, 0.25, 0.5, 0.75, 1])\nFine field target ratio argument to DarwinAI SDK (pipeline.model.fine-field.base-mlp.target-ratio: [0.1, 0.25, 0.5, 0.75, 1])"
+  },
+  {
+    "objectID": "experiments/exploration/Preliminary_Basic_Sweep.html#sweep-parameters-versus-similarity-metrics",
+    "href": "experiments/exploration/Preliminary_Basic_Sweep.html#sweep-parameters-versus-similarity-metrics",
+    "title": "Preliminary Basic Sweep",
+    "section": "2.1 Sweep Parameters versus Similarity Metrics",
+    "text": "2.1 Sweep Parameters versus Similarity Metrics\nAs expected based on our results from W’23, we see that the coarse field can be compressed down to almost zero (0.675%) of the original model size, and it does not hurt the quality of the model at all, as long as the fine field model is still big enough."
+  },
+  {
+    "objectID": "experiments/index.html",
+    "href": "experiments/index.html",
+    "title": "Experiments",
+    "section": "",
+    "text": "Results from experiments."
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this site"
+  },
+  {
+    "objectID": "reports/index.html",
+    "href": "reports/index.html",
+    "title": "Reports",
+    "section": "",
+    "text": "Reports."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "GEN-NeRF.",
+    "section": "",
+    "text": "Generating EfficieNt NeRFs through Neural Architecture Search"
+  }
+]

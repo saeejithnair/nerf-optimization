@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.361">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Exploring the relationship between model size and quality">
+
+<title>GEN-NeRF - Preliminary Basic Sweep</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-sidebar docked nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">GEN-NeRF</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html" rel="" target="">
+ <span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../reports/index.html" rel="" target="">
+ <span class="menu-text">Reports</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link active" href="../../experiments/index.html" rel="" target="" aria-current="page">
+ <span class="menu-text">Experiments</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../documentation/index.html" rel="" target="">
+ <span class="menu-text">Documentation</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html" rel="" target="">
+ <span class="menu-text">About</span></a>
+  </li>  
+</ul>
+            <div class="quarto-navbar-tools">
+</div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../experiments/index.html">Experiments</a></li><li class="breadcrumb-item"><a href="../../experiments/exploration/Preliminary_Basic_Sweep.html">Exploration</a></li><li class="breadcrumb-item"><a href="../../experiments/exploration/Preliminary_Basic_Sweep.html">Preliminary Basic Sweep</a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+      <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../experiments/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Experiments</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text">Exploration</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../experiments/exploration/Preliminary_Basic_Sweep.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Preliminary Basic Sweep</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#experiment-configuration" id="toc-experiment-configuration" class="nav-link active" data-scroll-target="#experiment-configuration"><span class="header-section-number">1</span> Experiment Configuration</a></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results"><span class="header-section-number">2</span> Results</a>
+  <ul class="collapse">
+  <li><a href="#sweep-parameters-versus-similarity-metrics" id="toc-sweep-parameters-versus-similarity-metrics" class="nav-link" data-scroll-target="#sweep-parameters-versus-similarity-metrics"><span class="header-section-number">2.1</span> Sweep Parameters versus Similarity Metrics</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Preliminary Basic Sweep</h1>
+</div>
+
+<div>
+  <div class="description">
+    Exploring the relationship between model size and quality
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="experiment-configuration" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Experiment Configuration</h1>
+<p>This experiment trained and evaluated 100 Gen-Nerf models on the Blender Synthetic Lego scene. The search swept across 4 different configurations</p>
+<ol type="1">
+<li><p>Coarse field initial blockspecs size (either layer widths of <code>LARGE_VARIABLE</code>: <code>[240, 248, 256]</code> or <code>SMALL_VARIABLE</code>: <code>[56, 60, 64]</code>)</p></li>
+<li><p>Fine field initial blockspecs size (either layer widths of <code>LARGE_VARIABLE</code>: <code>[240, 248, 256]</code> or <code>SMALL_VARIABLE</code>: <code>[56, 60, 64]</code>)</p></li>
+<li><p>Coarse field target ratio argument to DarwinAI SDK (<code>pipeline.model.coarse-field.base-mlp.target-ratio</code>: <code>[0.1, 0.25, 0.5, 0.75, 1]</code>)</p></li>
+<li><p>Fine field target ratio argument to DarwinAI SDK (<code>pipeline.model.fine-field.base-mlp.target-ratio</code>: <code>[0.1, 0.25, 0.5, 0.75, 1]</code>)</p></li>
+</ol>
+</section>
+<section id="results" class="level1 page-columns page-full" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Results</h1>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Following table is sorted to show the best models (i.e.&nbsp;lowest LPIPS) first.</p>
+</div>
+</div>
+<div class="cell page-columns page-full" data-execution_count="3">
+<div class="cell-output cell-output-display column-page-right" data-execution_count="3">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Run ID</th>
+<th data-quarto-table-cell-role="th">SSIM</th>
+<th data-quarto-table-cell-role="th">PSNR</th>
+<th data-quarto-table-cell-role="th">LPIPS</th>
+<th data-quarto-table-cell-role="th">Coarse Field Arch Style</th>
+<th data-quarto-table-cell-role="th">Coarse Field Arch Style Remapped</th>
+<th data-quarto-table-cell-role="th">Coarse Field Flop Ratio vs. Vanilla</th>
+<th data-quarto-table-cell-role="th">Coarse Field Params Ratio vs. Vanilla</th>
+<th data-quarto-table-cell-role="th">Coarse Field Generated</th>
+<th data-quarto-table-cell-role="th">Coarse Field Pretrained</th>
+<th data-quarto-table-cell-role="th">Coarse Field Flops</th>
+<th data-quarto-table-cell-role="th">Coarse Field Params</th>
+<th data-quarto-table-cell-role="th">Coarse Field Depth (Stage 1)</th>
+<th data-quarto-table-cell-role="th">Coarse Field Channels (Stage 1)</th>
+<th data-quarto-table-cell-role="th">Coarse Field Depth (Stage 2)</th>
+<th data-quarto-table-cell-role="th">Coarse Field Channels (Stage 2)</th>
+<th data-quarto-table-cell-role="th">Coarse Field Depth (Stage 3)</th>
+<th data-quarto-table-cell-role="th">Coarse Field Channels (Stage 3)</th>
+<th data-quarto-table-cell-role="th">Fine Field Arch Style</th>
+<th data-quarto-table-cell-role="th">Fine Field Arch Style Remapped</th>
+<th data-quarto-table-cell-role="th">Fine Field Flop Ratio vs. Vanilla</th>
+<th data-quarto-table-cell-role="th">Fine Field Params Ratio vs. Vanilla</th>
+<th data-quarto-table-cell-role="th">Fine Field Generated</th>
+<th data-quarto-table-cell-role="th">Fine Field Pretrained</th>
+<th data-quarto-table-cell-role="th">Fine Field Flops</th>
+<th data-quarto-table-cell-role="th">Fine Field Params</th>
+<th data-quarto-table-cell-role="th">Fine Field Depth (Stage 1)</th>
+<th data-quarto-table-cell-role="th">Fine Field Channels (Stage 1)</th>
+<th data-quarto-table-cell-role="th">Fine Field Depth (Stage 2)</th>
+<th data-quarto-table-cell-role="th">Fine Field Channels (Stage 2)</th>
+<th data-quarto-table-cell-role="th">Fine Field Depth (Stage 3)</th>
+<th data-quarto-table-cell-role="th">Fine Field Channels (Stage 3)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">44</td>
+<td>lzjc9hbe</td>
+<td>0.868697</td>
+<td>26.010962</td>
+<td>0.106744</td>
+<td>SMALL_VARIABLE</td>
+<td>3</td>
+<td>0.006753</td>
+<td>0.006875</td>
+<td>True</td>
+<td>False</td>
+<td>3316</td>
+<td>3390</td>
+<td>2</td>
+<td>16</td>
+<td>1</td>
+<td>18</td>
+<td>1</td>
+<td>20</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.949198</td>
+<td>0.949296</td>
+<td>True</td>
+<td>False</td>
+<td>466064</td>
+<td>468056</td>
+<td>4</td>
+<td>240</td>
+<td>1</td>
+<td>248</td>
+<td>3</td>
+<td>256</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">70</td>
+<td>kslawpak</td>
+<td>0.869682</td>
+<td>25.983730</td>
+<td>0.110385</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.682488</td>
+<td>0.682651</td>
+<td>True</td>
+<td>False</td>
+<td>335107</td>
+<td>336585</td>
+<td>3</td>
+<td>237</td>
+<td>1</td>
+<td>245</td>
+<td>2</td>
+<td>253</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.949198</td>
+<td>0.949296</td>
+<td>True</td>
+<td>False</td>
+<td>466064</td>
+<td>468056</td>
+<td>4</td>
+<td>240</td>
+<td>1</td>
+<td>248</td>
+<td>3</td>
+<td>256</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">64</td>
+<td>7wq6gqpn</td>
+<td>0.866774</td>
+<td>25.928278</td>
+<td>0.111437</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.682488</td>
+<td>0.682651</td>
+<td>True</td>
+<td>False</td>
+<td>335107</td>
+<td>336585</td>
+<td>3</td>
+<td>237</td>
+<td>1</td>
+<td>245</td>
+<td>2</td>
+<td>253</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.682488</td>
+<td>0.682651</td>
+<td>True</td>
+<td>False</td>
+<td>335107</td>
+<td>336585</td>
+<td>3</td>
+<td>237</td>
+<td>1</td>
+<td>245</td>
+<td>2</td>
+<td>253</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">37</td>
+<td>q6x7y82h</td>
+<td>0.864622</td>
+<td>25.629272</td>
+<td>0.111913</td>
+<td>SMALL_VARIABLE</td>
+<td>3</td>
+<td>0.006753</td>
+<td>0.006875</td>
+<td>True</td>
+<td>False</td>
+<td>3316</td>
+<td>3390</td>
+<td>2</td>
+<td>16</td>
+<td>1</td>
+<td>18</td>
+<td>1</td>
+<td>20</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.682488</td>
+<td>0.682651</td>
+<td>True</td>
+<td>False</td>
+<td>335107</td>
+<td>336585</td>
+<td>3</td>
+<td>237</td>
+<td>1</td>
+<td>245</td>
+<td>2</td>
+<td>253</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">39</td>
+<td>tktlu8my</td>
+<td>0.864397</td>
+<td>25.684809</td>
+<td>0.112296</td>
+<td>SMALL_VARIABLE</td>
+<td>3</td>
+<td>0.017615</td>
+<td>0.017840</td>
+<td>True</td>
+<td>False</td>
+<td>8649</td>
+<td>8796</td>
+<td>2</td>
+<td>33</td>
+<td>1</td>
+<td>36</td>
+<td>1</td>
+<td>39</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.682488</td>
+<td>0.682651</td>
+<td>True</td>
+<td>False</td>
+<td>335107</td>
+<td>336585</td>
+<td>3</td>
+<td>237</td>
+<td>1</td>
+<td>245</td>
+<td>2</td>
+<td>253</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">35</td>
+<td>7s2nf94q</td>
+<td>0.868506</td>
+<td>25.961525</td>
+<td>0.112375</td>
+<td>SMALL_VARIABLE</td>
+<td>3</td>
+<td>0.017615</td>
+<td>0.017840</td>
+<td>True</td>
+<td>False</td>
+<td>8649</td>
+<td>8796</td>
+<td>2</td>
+<td>33</td>
+<td>1</td>
+<td>36</td>
+<td>1</td>
+<td>39</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.949198</td>
+<td>0.949296</td>
+<td>True</td>
+<td>False</td>
+<td>466064</td>
+<td>468056</td>
+<td>4</td>
+<td>240</td>
+<td>1</td>
+<td>248</td>
+<td>3</td>
+<td>256</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">85</td>
+<td>nr7uhsoa</td>
+<td>0.863137</td>
+<td>25.530998</td>
+<td>0.113478</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.233477</td>
+<td>0.233929</td>
+<td>True</td>
+<td>False</td>
+<td>114639</td>
+<td>115340</td>
+<td>2</td>
+<td>167</td>
+<td>1</td>
+<td>174</td>
+<td>1</td>
+<td>180</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.949198</td>
+<td>0.949296</td>
+<td>True</td>
+<td>False</td>
+<td>466064</td>
+<td>468056</td>
+<td>4</td>
+<td>240</td>
+<td>1</td>
+<td>248</td>
+<td>3</td>
+<td>256</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">69</td>
+<td>sjvtic64</td>
+<td>0.867799</td>
+<td>25.872253</td>
+<td>0.113914</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.495658</td>
+<td>0.496132</td>
+<td>True</td>
+<td>False</td>
+<td>243372</td>
+<td>244621</td>
+<td>3</td>
+<td>200</td>
+<td>1</td>
+<td>207</td>
+<td>2</td>
+<td>214</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.949198</td>
+<td>0.949296</td>
+<td>True</td>
+<td>False</td>
+<td>466064</td>
+<td>468056</td>
+<td>4</td>
+<td>240</td>
+<td>1</td>
+<td>248</td>
+<td>3</td>
+<td>256</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">77</td>
+<td>tz9jds56</td>
+<td>0.863592</td>
+<td>25.602888</td>
+<td>0.113958</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.495658</td>
+<td>0.496132</td>
+<td>True</td>
+<td>False</td>
+<td>243372</td>
+<td>244621</td>
+<td>3</td>
+<td>200</td>
+<td>1</td>
+<td>207</td>
+<td>2</td>
+<td>214</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.682488</td>
+<td>0.682651</td>
+<td>True</td>
+<td>False</td>
+<td>335107</td>
+<td>336585</td>
+<td>3</td>
+<td>237</td>
+<td>1</td>
+<td>245</td>
+<td>2</td>
+<td>253</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">54</td>
+<td>osjoz80i</td>
+<td>0.866492</td>
+<td>25.839128</td>
+<td>0.114867</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.949198</td>
+<td>0.949296</td>
+<td>True</td>
+<td>False</td>
+<td>466064</td>
+<td>468056</td>
+<td>4</td>
+<td>240</td>
+<td>1</td>
+<td>248</td>
+<td>3</td>
+<td>256</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.949198</td>
+<td>0.949296</td>
+<td>True</td>
+<td>False</td>
+<td>466064</td>
+<td>468056</td>
+<td>4</td>
+<td>240</td>
+<td>1</td>
+<td>248</td>
+<td>3</td>
+<td>256</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">20</td>
+<td>kweuq1x6</td>
+<td>0.863161</td>
+<td>25.445162</td>
+<td>0.115011</td>
+<td>SMALL_VARIABLE</td>
+<td>3</td>
+<td>0.035820</td>
+<td>0.036256</td>
+<td>True</td>
+<td>False</td>
+<td>17588</td>
+<td>17876</td>
+<td>3</td>
+<td>44</td>
+<td>1</td>
+<td>47</td>
+<td>2</td>
+<td>51</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.682488</td>
+<td>0.682651</td>
+<td>True</td>
+<td>False</td>
+<td>335107</td>
+<td>336585</td>
+<td>3</td>
+<td>237</td>
+<td>1</td>
+<td>245</td>
+<td>2</td>
+<td>253</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">52</td>
+<td>sx3x8z6h</td>
+<td>0.863802</td>
+<td>25.726467</td>
+<td>0.116512</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.949198</td>
+<td>0.949296</td>
+<td>True</td>
+<td>False</td>
+<td>466064</td>
+<td>468056</td>
+<td>4</td>
+<td>240</td>
+<td>1</td>
+<td>248</td>
+<td>3</td>
+<td>256</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.682488</td>
+<td>0.682651</td>
+<td>True</td>
+<td>False</td>
+<td>335107</td>
+<td>336585</td>
+<td>3</td>
+<td>237</td>
+<td>1</td>
+<td>245</td>
+<td>2</td>
+<td>253</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">24</td>
+<td>eowaemr0</td>
+<td>0.865165</td>
+<td>25.604263</td>
+<td>0.117006</td>
+<td>SMALL_VARIABLE</td>
+<td>3</td>
+<td>0.035820</td>
+<td>0.036256</td>
+<td>True</td>
+<td>False</td>
+<td>17588</td>
+<td>17876</td>
+<td>3</td>
+<td>44</td>
+<td>1</td>
+<td>47</td>
+<td>2</td>
+<td>51</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.949198</td>
+<td>0.949296</td>
+<td>True</td>
+<td>False</td>
+<td>466064</td>
+<td>468056</td>
+<td>4</td>
+<td>240</td>
+<td>1</td>
+<td>248</td>
+<td>3</td>
+<td>256</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">11</td>
+<td>x9bifv5q</td>
+<td>0.864583</td>
+<td>25.704979</td>
+<td>0.118438</td>
+<td>SMALL_VARIABLE</td>
+<td>3</td>
+<td>0.048739</td>
+<td>0.049238</td>
+<td>True</td>
+<td>False</td>
+<td>23931</td>
+<td>24277</td>
+<td>3</td>
+<td>53</td>
+<td>1</td>
+<td>57</td>
+<td>2</td>
+<td>61</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.949198</td>
+<td>0.949296</td>
+<td>True</td>
+<td>False</td>
+<td>466064</td>
+<td>468056</td>
+<td>4</td>
+<td>240</td>
+<td>1</td>
+<td>248</td>
+<td>3</td>
+<td>256</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">19</td>
+<td>ikiklqzp</td>
+<td>0.858536</td>
+<td>25.307158</td>
+<td>0.118589</td>
+<td>SMALL_VARIABLE</td>
+<td>3</td>
+<td>0.048739</td>
+<td>0.049238</td>
+<td>True</td>
+<td>False</td>
+<td>23931</td>
+<td>24277</td>
+<td>3</td>
+<td>53</td>
+<td>1</td>
+<td>57</td>
+<td>2</td>
+<td>61</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.495658</td>
+<td>0.496132</td>
+<td>True</td>
+<td>False</td>
+<td>243372</td>
+<td>244621</td>
+<td>3</td>
+<td>200</td>
+<td>1</td>
+<td>207</td>
+<td>2</td>
+<td>214</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">5</td>
+<td>dfzokxwa</td>
+<td>0.861833</td>
+<td>25.423555</td>
+<td>0.118611</td>
+<td>SMALL_VARIABLE</td>
+<td>3</td>
+<td>0.048739</td>
+<td>0.049238</td>
+<td>True</td>
+<td>False</td>
+<td>23931</td>
+<td>24277</td>
+<td>3</td>
+<td>53</td>
+<td>1</td>
+<td>57</td>
+<td>2</td>
+<td>61</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.682488</td>
+<td>0.682651</td>
+<td>True</td>
+<td>False</td>
+<td>335107</td>
+<td>336585</td>
+<td>3</td>
+<td>237</td>
+<td>1</td>
+<td>245</td>
+<td>2</td>
+<td>253</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">12</td>
+<td>cs1lahro</td>
+<td>0.859177</td>
+<td>25.469301</td>
+<td>0.119054</td>
+<td>SMALL_VARIABLE</td>
+<td>3</td>
+<td>0.067860</td>
+<td>0.068560</td>
+<td>True</td>
+<td>False</td>
+<td>33320</td>
+<td>33804</td>
+<td>4</td>
+<td>56</td>
+<td>1</td>
+<td>60</td>
+<td>3</td>
+<td>64</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.495658</td>
+<td>0.496132</td>
+<td>True</td>
+<td>False</td>
+<td>243372</td>
+<td>244621</td>
+<td>3</td>
+<td>200</td>
+<td>1</td>
+<td>207</td>
+<td>2</td>
+<td>214</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">14</td>
+<td>jgu86ewj</td>
+<td>0.860912</td>
+<td>25.527203</td>
+<td>0.119996</td>
+<td>SMALL_VARIABLE</td>
+<td>3</td>
+<td>0.067860</td>
+<td>0.068560</td>
+<td>True</td>
+<td>False</td>
+<td>33320</td>
+<td>33804</td>
+<td>4</td>
+<td>56</td>
+<td>1</td>
+<td>60</td>
+<td>3</td>
+<td>64</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.682488</td>
+<td>0.682651</td>
+<td>True</td>
+<td>False</td>
+<td>335107</td>
+<td>336585</td>
+<td>3</td>
+<td>237</td>
+<td>1</td>
+<td>245</td>
+<td>2</td>
+<td>253</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">58</td>
+<td>ei4gv4ml</td>
+<td>0.858738</td>
+<td>25.316055</td>
+<td>0.120783</td>
+<td>SMALL_VARIABLE</td>
+<td>3</td>
+<td>0.017615</td>
+<td>0.017840</td>
+<td>True</td>
+<td>False</td>
+<td>8649</td>
+<td>8796</td>
+<td>2</td>
+<td>33</td>
+<td>1</td>
+<td>36</td>
+<td>1</td>
+<td>39</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.495658</td>
+<td>0.496132</td>
+<td>True</td>
+<td>False</td>
+<td>243372</td>
+<td>244621</td>
+<td>3</td>
+<td>200</td>
+<td>1</td>
+<td>207</td>
+<td>2</td>
+<td>214</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">94</td>
+<td>owimm7bt</td>
+<td>0.861115</td>
+<td>25.478466</td>
+<td>0.122479</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.095282</td>
+<td>0.095742</td>
+<td>True</td>
+<td>False</td>
+<td>46784</td>
+<td>47206</td>
+<td>2</td>
+<td>100</td>
+<td>1</td>
+<td>104</td>
+<td>1</td>
+<td>109</td>
+<td>LARGE_VARIABLE</td>
+<td>2</td>
+<td>0.682488</td>
+<td>0.682651</td>
+<td>True</td>
+<td>False</td>
+<td>335107</td>
+<td>336585</td>
+<td>3</td>
+<td>237</td>
+<td>1</td>
+<td>245</td>
+<td>2</td>
+<td>253</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div class="cell page-columns page-full" data-execution_count="4">
+<div class="cell-output cell-output-stdout">
+<pre><code>Dash is running on http://127.0.0.1:8052/
+</code></pre>
+</div>
+<div class="cell-output cell-output-display column-page-right">
+
+        <iframe width="100%" height="650" src="http://127.0.0.1:8052/" frameborder="0" allowfullscreen=""></iframe>
+        
+</div>
+</div>
+<section id="sweep-parameters-versus-similarity-metrics" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="sweep-parameters-versus-similarity-metrics"><span class="header-section-number">2.1</span> Sweep Parameters versus Similarity Metrics</h2>
+<p>As expected based on our results from W’23, we see that the coarse field can be compressed down to almost zero (0.675%) of the original model size, and it does not hurt the quality of the model at all, as long as the fine field model is still big enough.</p>
+<div class="cell" data-execution_count="5">
+<div class="cell-output cell-output-display">
+
+    <div style="position: relative; width: 100%; height: 600px;">
+        <iframe id="d59f41df-d2b6-4a0e-bf78-dca43a1a3f7b" src="basic_sweep_parcoords_figure.html" width="100%" height="100%" frameborder="0"></iframe>
+        <button style="position: absolute; top: 10px; left: 10px; background-color: transparent; border: none; cursor: pointer; padding: 5px; z-index: 10;" onclick="goFullscreen('d59f41df-d2b6-4a0e-bf78-dca43a1a3f7b'); return false">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewbox="0 0 64 64" fill="#000000" stroke="#000000">
+        <polyline points="20 8 8 8 8 20"></polyline>
+        <line x1="8" y1="8" x2="24" y2="24"></line>
+        <polyline points="56 20 56 8 44 8"></polyline>
+        <line x1="56" y1="8" x2="40" y2="24"></line>
+        <polyline points="44 56 56 56 56 44"></polyline>
+        <line x1="56" y1="56" x2="40" y2="40"></line>
+        <polyline points="8 44 8 56 20 56"></polyline>
+        <line x1="8" y1="56" x2="24" y2="40"></line>
+    </svg>
+    </button>
+    </div>
+    <script type="text/javascript">
+        function goFullscreen(id) {
+            var element = document.getElementById(id);
+            if (element.mozRequestFullScreen) {
+              element.mozRequestFullScreen();
+            } else if (element.webkitRequestFullScreen) {
+              element.webkitRequestFullScreen();
+            } else if (element.msRequestFullscreen) {
+              element.msRequestFullscreen();
+            }
+        }
+    </script>
+    
+</div>
+</div>
+<div class="cell" data-execution_count="6">
+<div class="cell-output cell-output-display">
+
+    <div style="position: relative; width: 100%; height: 600px;">
+        <iframe id="28dfa040-afa5-4699-9627-e889021beb8a" src="basic_sweep_scatter_multiple_figure.html" width="100%" height="100%" frameborder="0"></iframe>
+        <button style="position: absolute; top: 10px; left: 10px; background-color: transparent; border: none; cursor: pointer; padding: 5px; z-index: 10;" onclick="goFullscreen('28dfa040-afa5-4699-9627-e889021beb8a'); return false">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewbox="0 0 64 64" fill="#000000" stroke="#000000">
+        <polyline points="20 8 8 8 8 20"></polyline>
+        <line x1="8" y1="8" x2="24" y2="24"></line>
+        <polyline points="56 20 56 8 44 8"></polyline>
+        <line x1="56" y1="8" x2="40" y2="24"></line>
+        <polyline points="44 56 56 56 56 44"></polyline>
+        <line x1="56" y1="56" x2="40" y2="40"></line>
+        <polyline points="8 44 8 56 20 56"></polyline>
+        <line x1="8" y1="56" x2="24" y2="40"></line>
+    </svg>
+    </button>
+    </div>
+    <script type="text/javascript">
+        function goFullscreen(id) {
+            var element = document.getElementById(id);
+            if (element.mozRequestFullScreen) {
+              element.mozRequestFullScreen();
+            } else if (element.webkitRequestFullScreen) {
+              element.webkitRequestFullScreen();
+            } else if (element.msRequestFullscreen) {
+              element.msRequestFullscreen();
+            }
+        }
+    </script>
+    
+</div>
+</div>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
